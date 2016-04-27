@@ -62,10 +62,11 @@
 			<sequence>
 				<element name="param" type="tns:method-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
-			<attribute name="name" type="tns:java-identifier" use="optional">
+			<attribute name="name" type="tns:java-identifier">
 				<annotation>
 					<documentation>
-						Specifies the method name.
+						Specifies the method name. Names of the delegate method and the delegating method must
+						be the same.
 					</documentation>
 				</annotation>
 			</attribute>
@@ -73,7 +74,7 @@
 				<annotation>
 					<documentation>
 						Return type of the generated method. Note that the return type of the generated method must match
-						the return type of the delegated formatter method.
+						the return type of the delegated method.
 					</documentation>
 				</annotation>
 			</attribute>
@@ -81,7 +82,18 @@
 				<annotation>
 					<documentation>
 						Whitespace-separated list of modifiers of the generated method.
-						Default: &quot;public&quot; for delegate methods, &quot;public static&quot; for utility methods.
+						Default: &quot;public&quot; for delegate methods, &quot;public static&quot; for static methods.
+					</documentation>
+				</annotation>
+			</attribute>
+			<attribute name="static" type="boolean" use="optional">
+				<annotation>
+					<documentation>
+						If true, this method is generated as a static method, i.e. its invocation
+						is generated to reference the class instead of the delegate object.
+						If the delegate class also has "static=true", the static method invocation
+						is assumed to NOT have a first parameter that takes the instance of the generated
+						class.
 					</documentation>
 				</annotation>
 			</attribute>
@@ -106,7 +118,7 @@
 		</annotation>
 		<complexType>
 			<sequence>
-				<element ref="tns:method" minOccurs="1" maxOccurs="unbounded"/>
+				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="id" type="ID" use="optional"/>
 			<attribute name="class" type="tns:java-qualified-identifier" use="required"/>
