@@ -121,7 +121,17 @@
 				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="id" type="ID" use="optional"/>
-			<attribute name="class" type="tns:java-qualified-identifier" use="required"/>
+			<attribute name="class" type="tns:java-qualified-identifier" use="required">
+				<annotation>
+					<documentation>
+						Fully qualified name of the class of the delegate.
+						This class must be in the classpath at the time when
+						the generated code is compiled.
+						If method inference is turned on, the class must be
+						in the classpath at the time the code is generated.
+					</documentation>
+				</annotation>
+			</attribute>
 			<attribute name="static" type="boolean">
 				<annotation>
 					<documentation>

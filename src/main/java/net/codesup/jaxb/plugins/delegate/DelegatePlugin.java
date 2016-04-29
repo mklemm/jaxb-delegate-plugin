@@ -23,6 +23,7 @@
  */
 package net.codesup.jaxb.plugins.delegate;
 
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,10 +35,10 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import com.kscs.util.plugins.xjc.base.AbstractPlugin;
-import com.kscs.util.plugins.xjc.base.Opt;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JConditional;
+import com.sun.codemodel.JDeclaration;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JFieldVar;
@@ -52,6 +53,8 @@ import com.sun.tools.xjc.outline.Outline;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
+import static java.lang.Thread.currentThread;
+
 /**
  * XJC plugin to generate a "toString"-like method by generating an invocation of a delegate object formatter class. Delegate class, method names, method return types and modifiers can be customized
  * on the XJC command line or as binding customizations.
@@ -64,7 +67,7 @@ public class DelegatePlugin extends AbstractPlugin {
 	static {
 		try {
 			JAXB_CONTEXT = JAXBContext.newInstance(Delegates.class, Delegate.class);
-		} catch (JAXBException e) {
+		} catch (final JAXBException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -80,9 +83,6 @@ public class DelegatePlugin extends AbstractPlugin {
 			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
 			DelegatePlugin.METHOD_CUSTOMIZATION_NAME);
 	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
-
-	@Opt
-	private boolean inferMethods = false;
 
 	@Override
 	public String getOptionName() {
@@ -131,9 +131,10 @@ public class DelegatePlugin extends AbstractPlugin {
 		}
 	}
 
-	private void generateDelegateReference(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegate) {
+	private void generateDelegateReference(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation) {
 		final JCodeModel model = outline.getCodeModel();
-		final JClass delegateClass = model.ref(delegate.getClazz());
+		final JClass delegateClass = model.ref(delegateAnnotation.getClazz());
+		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
 		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.name());
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
 		final JDefinedClass definedClass = classOutline.implClass;
@@ -143,9 +144,10 @@ public class DelegatePlugin extends AbstractPlugin {
 			final int modifiers = parseModifiers(coalesce(method.getModifiers(), "public"));
 			final JType returnType = parseType(model, method.getType());
 			final JMethod implMethod = definedClass.method(staticMethod ? JMod.STATIC | modifiers : modifiers, returnType, method.getName());
+			int i=0;
 			for (final MethodParameterType param : method.getParam()) {
 				final JType paramType = parseType(model, param.getType());
-				implMethod.param(paramType, param.getName());
+				implMethod.param(paramType, coalesce(param.getName(), "p"+ i++));
 			}
 			final JInvocation invoke;
 			if (staticDelegate) {
@@ -168,6 +170,121 @@ public class DelegatePlugin extends AbstractPlugin {
 			implMethod.body()._return(invoke);
 		}
 	}
+
+	private Delegate gatherRuntimeInformation(final Delegate delegateAnnotation, final JClass delegateClass) {
+		if(delegateClass instanceof JDeclaration) {
+			try {
+				final Class<?> referencedClass = findRuntimeClass(delegateClass);
+				if(delegateAnnotation.getMethod().isEmpty()) {
+					for (final java.lang.reflect.Method runtimeMethod : referencedClass.getMethods()) {
+						delegateAnnotation.getMethod().add(createMethodDescriptor(delegateAnnotation, runtimeMethod));
+					}
+				} else {
+					for(final Method method:delegateAnnotation.getMethod()) {
+						try {
+							final java.lang.reflect.Method runtimeMethod = findRuntimeMethod(referencedClass, method);
+							extendMethodDescriptor(delegateAnnotation, method, runtimeMethod);
+						} catch (final NoSuchMethodException nmx) {
+							// fall through
+						}
+					}
+				}
+			} catch (final ClassNotFoundException cnf) {
+				// fall through
+			}
+		}
+		return delegateAnnotation;
+	}
+
+	private java.lang.reflect.Method findRuntimeMethod(final Class<?> referencedClass, final Method method) throws NoSuchMethodException {
+		if(method.getParam().isEmpty()) {
+			try {
+				return referencedClass.getMethod(method.getName());
+			} catch(final NoSuchMethodException nsmx) {
+				for(final java.lang.reflect.Method runtimeMethod:referencedClass.getMethods()) {
+					if(runtimeMethod.getName().equals(method.getName())) {
+						return runtimeMethod;
+					}
+				}
+				throw new NoSuchMethodException("Method " + referencedClass.getName() + "#" + method.getName() + "(<anyType>) not found");
+			}
+		} else {
+			final Class<?>[] runtimeParameterTypes = new Class<?>[method.getParam().size()];
+			int paramIndex = 0;
+			for (final MethodParameterType param : method.getParam()) {
+				final int currentIndex = paramIndex++;
+				try {
+					runtimeParameterTypes[currentIndex] = Class.forName(param.getType());
+				} catch (final ClassNotFoundException cnfe) {
+					runtimeParameterTypes[currentIndex] = Object.class;
+				}
+			}
+			return referencedClass.getMethod(method.getName(), runtimeParameterTypes);
+		}
+	}
+
+	private Method createMethodDescriptor(final Delegate delegateAnnotation, final java.lang.reflect.Method runtimeMethod) {
+		final boolean staticDelegate = coalesce(delegateAnnotation.isStatic(), Boolean.FALSE);
+		final Method method = new Method();
+		method.setModifiers(Modifier.toString(runtimeMethod.getModifiers() & ~Modifier.STATIC));
+		method.setName(runtimeMethod.getName());
+		method.setStatic((runtimeMethod.getModifiers() & Modifier.STATIC) != 0 && !staticDelegate);
+		method.setType(runtimeMethod.getReturnType().getName());
+		inferParameters(method, runtimeMethod);
+		return method;
+	}
+
+	private Method extendMethodDescriptor(final Delegate delegateAnnotation, final Method method, final java.lang.reflect.Method runtimeMethod) {
+		if(method.getModifiers() == null) {
+			method.setModifiers(Modifier.toString(runtimeMethod.getModifiers() & ~Modifier.STATIC));
+		}
+		if(method.getType() == null) {
+			method.setType(runtimeMethod.getReturnType().getName());
+		}
+		if(method.getParam().isEmpty()) {
+			inferParameters(method, runtimeMethod);
+		} else {
+			int paramIndex = 0;
+			for(final MethodParameterType param : method.getParam()) {
+				if(param.getType() == null) {
+					param.setType(runtimeMethod.getParameterTypes()[paramIndex++].getName());
+				}
+			}
+		}
+		return method;
+	}
+
+	private void inferParameters(final Method method, final java.lang.reflect.Method runtimeMethod) {
+		int i = 0;
+		for (final Class<?> paramType : runtimeMethod.getParameterTypes()) {
+			final MethodParameterType param = new MethodParameterType();
+			param.setName("p" + i++);
+			param.setType(paramType.getName());
+			method.getParam().add(param);
+		}
+	}
+
+	private Class<?> findRuntimeClass(final JClass jClass) throws ClassNotFoundException {
+		try {
+			final ClassLoader contextClassLoader;
+			// try the context class loader first
+			if (System.getSecurityManager() == null) {
+				contextClassLoader = Thread.currentThread().getContextClassLoader();
+			} else {
+				contextClassLoader = (ClassLoader) java.security.AccessController.doPrivileged(
+						new java.security.PrivilegedAction() {
+							public java.lang.Object run() {
+								return currentThread().getContextClassLoader();
+							}
+						});
+			}
+			return contextClassLoader.loadClass(jClass.binaryName());
+		} catch (ClassNotFoundException e) {
+			// then the default mechanism.
+			return Class.forName(jClass.binaryName());
+		}
+	}
+
 
 	private JType parseType(final JCodeModel model, final String typeSpec) {
 		try {
