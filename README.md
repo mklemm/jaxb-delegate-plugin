@@ -1,94 +1,86 @@
-# jaxb-format-plugin
+# jaxb-delegate-plugin
 Plugin for the JAXB (Java API for XML Binding) Schema-to-Source compiler (XJC) that generates code
-to format instances of generated classes via an arbitrary helper class.
+to add arbitrary methods to classes generated from an XML Schema document.
 
 ## Motivation
-There are several plugins for XJC currently to generate a "toString()" method in generated JAXB class files.
-Unfortunately, however, most of these plugins are based on the assumption that a "toString()" or other formatting
-method should return a generic string representation of the object they are called on.
-This plugin, however, gives you full control over the shape of the string representation of an object, and
-also lets you specify the name of the generated method (defaults to "toString") and a helper class
-that does the actual formatting.
-An example formatter class that uses XPath expressions as the building blocks of the formatting engine
-is given in the [jaxb-object-formatter](http://github.com/mklemm/jaxb-object-formatter) repository,
-which uses a fork of the apache [commons-jxpath](http://github.com/mklemm/commons-jxpath) project, modified to
-support XPath expressions using the actual XML names of JAXB-bindable properties, by processing JAXB-specific
-source-level annotations.
+Usually, classes generated with XJC are more or less pure data structures. Any business logic,
+but also additional derived property values must be implemented externally to the
+generated class.
+The reference implementation of JAXB ships with a "source code injection" plugin
+that provides a means to add arbitrary java code to the XSD which will then end
+up in the generated Java code.
+This approach, however, leads to ugly XML Schema documents which are tightly
+tied to Java as a consuming programming language. XSDs "enhanced" in this way
+are unsuitable to publish e.g. as part of the interface description for a
+REST service, for example.
+The "delegate" plugin, on the other hand, tries to keep Java-specific intrusion
+into the XSD to a minimum by describing methods that execute additional logic
+totally in XSD as JAXB binding customization elements, with only some type
+name specifications being specific to the programming language used.
+This way, also clients using different programming
+frameworks can consume the XSDs without any issues and base their own logic
+on the additional annotations in the XSD.
+
+## Function
+The "delegate" plugin generates methods that automatically delegate to
+compatible methods of a defined delegate class. The delegate can be a
+utility class, containing only static methods, or a delegate instance,
+in which case the plugin also generates an instance field in the target
+class holding the instance of the delegate, and code to lazily instantiate
+the delegate instance upon first use.
+The included XSD has extensive information about the available binding
+customizations and their use.
 
 ## Usage
-- Add a formatter class (see below) to the compile and runtime classpath of your application.
-- Add jaxb-format-plugin.jar to the classpath of the XJC. See below on examples about how to do that with Maven.
-- Enable extension processing in XJC by specifying the "-extension" command line option. See below for Maven example.
-- Enable jaxb-format-plugin by giving "-Xformat" on the XJC command line, followed optionally by one of the options
-  explained below.
-- Specify the fully qualified name of the formatter class either with the "-formatter" command line option or
-  in the XSD or binding-config file with the <formatter> binding customization on the global or complexType level.
-- Add "expression" binding customizations to complexType definitions in your XSD or separate binding customization file.
-  Also, it is possible to override the global command-line settings with binding customizations, see [reference](#reference) below.
+
+- Add a delegate class to your project. As it is very likely that there
+  is a circular dependency between the generated class and the delegate,
+  it will have to be defined in the same compilation module that the
+  source code is generated in. To avoid circular dependencies, additional
+  interfaces will have to be defined.
+- Add jaxb-delegate-plugin.jar to the classpath of the XJC. See below on
+  examples about how to do that with Maven.
+- Enable extension processing in XJC by specifying the "-extension"
+  command line option. See below for Maven example.
+- Enable jaxb-delegate-plugin by giving "-Xdelegate" on the XJC command
+  line.
+- Add appropriate binding customizations (see included XSD) to complexType
+  definitions in your XSD or separate binding customization file.
 
 ## Reference
 ### Plugin artifact
-groupId: com.kscs.util
+groupId: net.codesup.util
 artifactId: jaxb-format-plugin
 
 ### Plugin Activation
-		-Xformat
-		-formatter=<class name>                     Fully qualified name of formatter class. Optional, but if missing, class must be specified in global or local "formatter" binding customization.
-		-formatter-method=<method name>             Name of formatter instance method to invoke. Optional, default: "format"
-		-formatter-field=<field name>               Name of the instance field that holds the formatter instance in the generated class. Optional, default: "__objectFormatter"
-		-generated-method=<method name>             Name of the generated method. Optional, default: "toString"
-		-generated-method-type=<class name>         Fully qualified name of the return type of the generated method. Optional, default: "java.lang.String"
-		-generated-method-modifiers=<Modifiers>     Space-separated list of modifiers for the generated method. Optional, default: "public"
+		-Xdelegate
 
-The formatter class does not need to be in the classpath at the time code is generated. It also does
+The delegate class does not need to be in the classpath at the time code is generated. It also does
 not need to implement a specific interface. It must, however, be in the classpath when
 the generated code is compiled by the java compiler.
 
-The formatter class must have the following properties:
-1. Public constructor taking the expression string as single argument. The helper
-	class will be instantiated once for every generated class that is given an
-	"expression" customization. The expression will be passed into this constructor,
-	the implementation should the compile or otherwise process the expression to
-	an internal state.
-2. Public instance method that takes an instance of the generated class as an argument.
-	The return type of this method must be the same as the return type of the generated method.
+The delegate can either be a utility class with static methods,
+or a delegate instance, which is automatically created by the
+generated code.
+
+If it is a delegate instance, it must fulfil the following constraints:
+
+- Public one-argument constructor, taking the instance of the target class
+  as an argument
+- Methods having the same name, parameter types, and return types
+  as the methods defined in the binding customizations.
+
+If it is a utility class, it will never be instantiated, but each
+of the methods will have to be declared as "public static", and there must
+be an additional first parameter representing the instance of the target class.
+
 
 ### Binding customizations
 For binding customization elements, see the attached XSD.
 
-## Examples
-### Using with Maven and [jxpath-object-formatter](http://github.com/mklemm/jxpath-object-formatter)
-This shows you how to generate "toString()" methods for your generated classes, which return a
-string representation of the object based on an XPath expression that evaluates to a string.
-
-Based on apache [commons-jxpath](http://github.com/mklemm/commons-jxpath), you can specify
-an XPath expression on every complexType definition, which will then be evaluated against
-the java object tree in memory, NOT the serialized XML representation of your JAXB object.
-This way, generated toString methods can be used anywhere in your code at runtime without
-serializing/deserializing your object.
-
-The [jxpath-object-formatter](http://github.com/mklemm/jxpath-object-formatter) implementation
-uses a modified version of jxpath that lets you write your XPath expressions using the XML names
-of object's properties, represented as XML elements and attributes, as opposed to the standard
-commons-jxpath that can evaluate expressions only if node references are given as JavaBeans property
-names. This way, there should be no syntactical difference in your XPath expressions, whether they
-are processing the serialized XML document or the object graph in memory.
-Additionally, jxpath-object-formatter defines custom XPath functions to format java.util.Date values etc.
-
 #### Maven setup
-1. Add runtime dependency to jxpath-object-formatter:
 
-		<dependencies>
-			<!-- ... other dependencies -->
-			<dependency>
-                <groupId>com.kscs.util</groupId>
-                <artifactId>jxpath-object-formatter</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-			<!-- ... other dependencies -->
-        </depenendcies>
-
-2. Enable the jaxb2-maven-plugin to generate java code from XSD:
+Enable the jaxb2-maven-plugin to generate java code from XSD:
 
 		<build>
 			<!-- ... other build stuff -->
@@ -121,16 +113,14 @@ Additionally, jxpath-object-formatter defines custom XPath functions to format j
                         <scanDependenciesForBindings>false</scanDependenciesForBindings>
                         <args>
 							<!-- ... other XJC plugin args -->
-                            <arg>-Xformat</arg> <!-- format plugin activation -->
-                            <arg>-formatter</arg>
-                            <arg>com.kscs.util.jaxb.ObjectFormatter</arg> <!-- class name of formatter class (see above) -->
+                            <arg>-Xdelegate</arg> <!-- delegate plugin activation -->
                         </args>
                         <plugins>
 							<!-- ... other XJC plugin references -->
                             <plugin>
                                 <!-- format plugin reference -->
-                                <groupId>com.kscs.util</groupId>
-                                <artifactId>jaxb-format-plugin</artifactId>
+                                <groupId>net.codesup.util</groupId>
+                                <artifactId>jaxb-delegate-plugin</artifactId>
                                 <version>1.0.0</version>
                             </plugin>
                         </plugins>
@@ -143,23 +133,25 @@ Additionally, jxpath-object-formatter defines custom XPath functions to format j
 Ths is an example how to specify the binding customizations inline in the XSD file,
 please refer to the JAXB/XJC documentation on how to do that in a separate binding
 file.
-In any case, you must declare a namespace prefix for the "http://www.kscs.com/util/jaxb/format"
-namespace, and then use (at least) the "expression" customization. Also note the declaration of
+In any case, you must declare a namespace prefix for the "http://www.codesup.net/jaxb/plugins/delegate"
+namespace, and then use (at least) the "method" customization. Also note the declaration of
 the JAXB namespace, and the jxb:version and jxb:extensionBindingPrefixes attributes.
 
 		<schema xmlns="http://www.w3.org/2001/XMLSchema" version="1.0"
 			targetNamespace="http://my.namespace.org/myschema"
 			xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
 			jxb:version="2.1"
-			jxb:extensionBindingPrefixes="format"
-			xmlns:format="http://www.kscs.com/util/jaxb/format">
+			jxb:extensionBindingPrefixes="delegate"
+			xmlns:delegate="http://www.codesup.net/jaxb/plugins/delegate">
 
 			<!-- ... other definitions -->
 
 			<complexType name="my-type">
 				<annotation>
 					<appInfo>
-						<format:expression select="concat('My Object is ', @name, ', created at: ', format:isoDate(created-at))"/>
+					<delegate:delegate class="org.namespace.my.myschema.Delegate">
+						<delegate:method name="hashCode" type="int"/>
+					</delegate:delegate>
 					</appInfo>
 				</annotation>
 				<sequence>
@@ -169,14 +161,10 @@ the JAXB namespace, and the jxb:version and jxb:extensionBindingPrefixes attribu
 			</complexType>
 		</schema>
 
-#### Use the generated "toString()" method
+#### Use the generated "hashCode" method
 You can now write something like this:
 
 		MyType myObject = new MyType();
 		myObject.setName("First instance");
 		myObject.setCreatedAt(new Date());
-		System.out.println(myObject);
-
-And it will print something like:
-
-		My object is First instance, created at: 2015-01-26T11:30:00Z
+		System.out.println(myObject.hashCode());
