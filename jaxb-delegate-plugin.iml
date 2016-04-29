@@ -13,7 +13,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="jaxb-plugin-lib" />
+    <orderEntry type="library" name="Maven: net.codesup.util:jaxb-plugin-lib:1.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jaxb:jaxb-xjc:2.2.11" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jaxb:jaxb-core:2.2.11" level="project" />
     <orderEntry type="library" name="Maven: javax.xml.bind:jaxb-api:2.2.12-b140109.1041" level="project" />
