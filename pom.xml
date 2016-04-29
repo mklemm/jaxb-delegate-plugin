@@ -10,11 +10,17 @@
 		<version>1.1.0</version>
 	</parent>
 
-	<groupId>net.codesup.util</groupId>
 	<artifactId>jaxb-delegate-plugin</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 
 	<name>JAXB delegate plugin</name>
+	<description>
+		JAXB XJC plugin to generate real business logic methods inside
+		generated classes.
+		The implementation of the methods is done by generating delegation
+		code to a corresponding utility class or an instance delegate.
+	</description>
+	<url>http://github.com/mklemm/jaxb-delegate-plugin</url>
 	<packaging>jar</packaging>
 
 	<scm>
@@ -27,7 +33,7 @@
 		<dependency>
 			<groupId>net.codesup.util</groupId>
 			<artifactId>jaxb-plugin-lib</artifactId>
-			<version>1.1.0</version>
+			<version>1.2.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
