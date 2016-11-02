@@ -1,4 +1,6 @@
 target/
+plugin/target
+test/target
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup

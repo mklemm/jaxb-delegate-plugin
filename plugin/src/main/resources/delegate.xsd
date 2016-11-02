@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
 		xmlns:tns="http://www.codesup.net/jaxb/plugins/delegate"
+		elementFormDefault="qualified"
 		targetNamespace="http://www.codesup.net/jaxb/plugins/delegate">
 	<!--
 	  ~ MIT License
@@ -41,6 +42,9 @@
 				Represents a method parameter specification.
 			</documentation>
 		</annotation>
+		<sequence>
+			<element name="documentation" type="string" minOccurs="0"/>
+		</sequence>
 		<attribute name="type" type="tns:java-qualified-identifier"/>
 		<attribute name="name" type="token"/>
 	</complexType>
@@ -49,17 +53,11 @@
 			<documentation>
 				Specifies the method that will be generated in the JAXB class to return a formatted
 				representation of an instance of the generated class.
-				If &quot;infer-methods&quot; has been set to true on the command line,
-				and if no method elements are given at all, the plugin tries to analyze
-				the existing source code of the class, if it can be found on the build path, and
-				infer methods from there.
-				If infer-methods==true and still there are methods specified here, only the methods
-				declared here will be generated, however, their parameters and return values don't need
-				to be fully specified here.
 			</documentation>
 		</annotation>
 		<complexType>
 			<sequence>
+				<element name="documentation" type="string" minOccurs="0"/>
 				<element name="param" type="tns:method-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="name" type="tns:java-identifier">
@@ -118,6 +116,7 @@
 		</annotation>
 		<complexType>
 			<sequence>
+				<element name="documentation" type="string" minOccurs="0"/>
 				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="id" type="ID" use="optional"/>
@@ -152,8 +151,10 @@
 	<element name="delegates">
 		<complexType>
 			<sequence>
+				<element name="documentation" type="string" minOccurs="0"/>
 				<element ref="tns:delegate" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 		</complexType>
 	</element>
+
 </schema>

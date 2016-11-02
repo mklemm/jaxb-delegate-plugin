@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsd-to-xhtml.xslt"?>
+
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+		xmlns:tns="http://www.codesup.net/jaxb/plugins/delegate/test"
+		xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+		jxb:version="2.1"
+		jxb:extensionBindingPrefixes="dg"
+		xmlns:dg="http://www.codesup.net/jaxb/plugins/delegate"
+		targetNamespace="http://www.codesup.net/jaxb/plugins/delegate/test"
+		elementFormDefault="qualified"
+		attributeFormDefault="unqualified"
+>
+
+	<element name="test-delegee-type">
+		<complexType>
+			<annotation>
+				<appinfo>
+						<dg:delegate class="net.codesup.jaxb.plugins.delegate.test.TestDelegate">
+							<dg:method name="equals" type="boolean">
+								<dg:documentation>This overrides Object.equals()</dg:documentation>
+								<dg:param name="other" type="java.lang.Object">
+									<dg:documentation>The object to compare with</dg:documentation>
+								</dg:param>
+							</dg:method>
+							<dg:method name="hashCode" type="int"/>
+						</dg:delegate>
+				</appinfo>
+			</annotation>
+			<sequence>
+				<element minOccurs="0" name="user-id" type="string"/>
+				<element minOccurs="0" name="user-last-name" type="string"/>
+				<element minOccurs="0" name="user-first-name" type="string"/>
+				<element minOccurs="0" name="password" type="string"/>
+				<element minOccurs="0" name="role" type="string"/>
+				<element minOccurs="0" name="department" type="string"/>
+				<element minOccurs="0" name="divisions" type="string"/>
+				<element minOccurs="0" name="offices" type="string"/>
+				<element minOccurs="0" name="created-at" type="dateTime"/>
+				<element minOccurs="0" name="created-by" type="string"/>
+				<element minOccurs="0" name="changed-at" type="dateTime"/>
+				<element minOccurs="0" name="changed-by" type="string"/>
+				<element name="confirm-privilege" type="int"/>
+				<element minOccurs="0" name="global-search-term" type="string"/>
+				<element name="auto-logon" type="boolean"/>
+			</sequence>
+		</complexType>
+	</element>
+</schema>

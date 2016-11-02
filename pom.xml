@@ -1,61 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>net.codesup.util</groupId>
-		<artifactId>jaxb-plugin-parent</artifactId>
-		<version>1.1.0</version>
-	</parent>
+	<groupId>net.codesup.util</groupId>
+	<artifactId>jaxb-delegate-plugin-all</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
 
-	<artifactId>jaxb-delegate-plugin</artifactId>
-	<version>1.1.0-SNAPSHOT</version>
+	<name>The JAXB delegate plugin including test suite</name>
 
-	<name>JAXB delegate plugin</name>
-	<description>
-		JAXB XJC plugin to generate real business logic methods inside
-		generated classes.
-		The implementation of the methods is done by generating delegation
-		code to a corresponding utility class or an instance delegate.
-	</description>
-	<url>http://github.com/mklemm/jaxb-delegate-plugin</url>
-	<packaging>jar</packaging>
-
-	<scm>
-		<connection>scm:git:https://github.com/mklemm/jaxb-delegate-plugin.git</connection>
-		<developerConnection>scm:git:https://github.com/mklemm/jaxb-delegate-plugin.git</developerConnection>
-		<url>https://github.com/mklemm/jaxb-delegate-plugin.git</url>
-	  <tag>HEAD</tag>
-  </scm>
-
-	<dependencies>
-		<dependency>
-			<groupId>net.codesup.util</groupId>
-			<artifactId>jaxb-plugin-lib</artifactId>
-			<version>1.2.0</version>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.5.1</version>
-				<inherited>true</inherited>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-release-plugin</artifactId>
-				<configuration>
-					<tagBase>https://github.com/mklemm/jaxb-delegate-plugin.git</tagBase>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
+	<packaging>pom</packaging>
+	<modules>
+		<module>plugin</module>
+		<module>test</module>
+	</modules>
 </project>
+

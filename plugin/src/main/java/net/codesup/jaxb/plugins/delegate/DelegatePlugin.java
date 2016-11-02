@@ -24,6 +24,7 @@
 package net.codesup.jaxb.plugins.delegate;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import com.kscs.util.plugins.xjc.base.AbstractPlugin;
 import com.sun.codemodel.JClass;
@@ -46,12 +52,11 @@ import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JType;
+import com.sun.codemodel.JVar;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.model.CPluginCustomization;
 import com.sun.tools.xjc.outline.ClassOutline;
 import com.sun.tools.xjc.outline.Outline;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
 
 import static java.lang.Thread.currentThread;
 
@@ -78,10 +83,14 @@ public class DelegatePlugin extends AbstractPlugin {
 	private static final String DELEGATES_CUSTOMIZATION_NAME = "delegates";
 	private static final String DELEGATE_CUSTOMIZATION_NAME = "delegate";
 	private static final String METHOD_CUSTOMIZATION_NAME = "method";
+	private static final String PARAM_CUSTOMIZATION_NAME = "param";
+	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
 	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
 			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
 			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
-			DelegatePlugin.METHOD_CUSTOMIZATION_NAME);
+			DelegatePlugin.METHOD_CUSTOMIZATION_NAME,
+			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
+			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
 	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
 	@Override
@@ -114,40 +123,56 @@ public class DelegatePlugin extends AbstractPlugin {
 					delegatesCustomization.markAsAcknowledged();
 					final JAXBElement<Delegates> delegatesElement = unmarshaller.unmarshal(delegatesCustomization.element, Delegates.class);
 					for (final Delegate delegate : delegatesElement.getValue().getDelegate()) {
-						generateDelegateReference(outline, errorHandler, classOutline, delegate);
+						generateDelegateReference(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
 					}
 				} else {
 					final CPluginCustomization delegateCustomization = getCustomizationElement(classOutline, DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME);
 					if (delegateCustomization != null) {
 						delegateCustomization.markAsAcknowledged();
 						final JAXBElement<Delegate> delegateElement = unmarshaller.unmarshal(delegateCustomization.element, Delegate.class);
-						generateDelegateReference(outline, errorHandler, classOutline, delegateElement.getValue());
+						generateDelegateReference(outline, errorHandler, classOutline, delegateElement.getValue(), delegateCustomization.locator);
 					}
 				}
 			}
 			return true;
 		} catch (final Exception e) {
-			throw new SAXException(e);
+			errorHandler.error(new SAXParseException(e.getMessage(), outline.getModel().getLocator()));
 		}
+		return true;
 	}
 
-	private void generateDelegateReference(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation) {
+	private void generateDelegateReference(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation, final Locator rootLocator) throws SAXException {
+		if(delegateAnnotation.getClazz() == null) {
+			errorHandler.error(new SAXParseException(getMessage("error.classRequired"), rootLocator));
+			return;
+		}
 		final JCodeModel model = outline.getCodeModel();
 		final JClass delegateClass = model.ref(delegateAnnotation.getClazz());
 		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
 		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.name());
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
 		final JDefinedClass definedClass = classOutline.implClass;
-		final JFieldVar delegateField = delegate.isStatic() ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
+		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
+		if(delegate.getDocumentation() != null) {
+			delegateField.javadoc().append(delegate.getDocumentation());
+		}
 		for (final Method method : delegate.getMethod()) {
 			final boolean staticMethod = coalesce(method.isStatic(), Boolean.FALSE);
 			final int modifiers = parseModifiers(coalesce(method.getModifiers(), "public"));
 			final JType returnType = parseType(model, method.getType());
 			final JMethod implMethod = definedClass.method(staticMethod ? JMod.STATIC | modifiers : modifiers, returnType, method.getName());
+			if(method.getDocumentation() != null) {
+				implMethod.javadoc().append(method.getDocumentation());
+			}
 			int i=0;
+			final List<JVar> params= new ArrayList<>();
 			for (final MethodParameterType param : method.getParam()) {
 				final JType paramType = parseType(model, param.getType());
-				implMethod.param(paramType, coalesce(param.getName(), "p"+ i++));
+				final JVar implParam = implMethod.param(paramType, coalesce(param.getName(), "p" + i++));
+				params.add(implParam);
+				if(param.getDocumentation() != null) {
+					implMethod.javadoc().addParam(implParam).append(param.getDocumentation());
+				}
 			}
 			final JInvocation invoke;
 			if (staticDelegate) {
@@ -164,8 +189,8 @@ public class DelegatePlugin extends AbstractPlugin {
 					invoke = delegateField.invoke(method.getName());
 				}
 			}
-			for (final MethodParameterType param : method.getParam()) {
-				invoke.arg(param.getName());
+			for (final JVar param:params) {
+				invoke.arg(param);
 			}
 			implMethod.body()._return(invoke);
 		}
