@@ -13,9 +13,13 @@ This approach, however, leads to ugly XML Schema documents which are tightly
 tied to Java as a consuming programming language. XSDs "enhanced" in this way
 are unsuitable to publish e.g. as part of the interface description for a
 REST service, for example.
+There also is a way in the JAXB RI to extend generated classes by inheritance.
+This approach, however, has the disadvantage that you cannot rely on the exact
+classes, since inherited classes have a different identity.
 The "delegate" plugin, on the other hand, tries to keep Java-specific intrusion
-into the XSD to a minimum by describing methods that execute additional logic
-totally in XSD as JAXB binding customization elements, with only some type
+into the XSD to a minimum and maintains the exact type of the generated classes
+by describing methods that execute additional logic totally in XSD as JAXB
+binding customization elements, with only some type
 name specifications being specific to the programming language used.
 This way, also clients using different programming
 frameworks can consume the XSDs without any issues and base their own logic
@@ -136,6 +140,9 @@ file.
 In any case, you must declare a namespace prefix for the "http://www.codesup.net/jaxb/plugins/delegate"
 namespace, and then use (at least) the "method" customization. Also note the declaration of
 the JAXB namespace, and the jxb:version and jxb:extensionBindingPrefixes attributes.
+Of course, the binding customizations can also be applied in a separate bindings file.
+Note that the "delegate" binding customization can only be applied to a named or
+anonymous complexType declaration.
 
 		<schema xmlns="http://www.w3.org/2001/XMLSchema" version="1.0"
 			targetNamespace="http://my.namespace.org/myschema"
@@ -161,6 +168,29 @@ the JAXB namespace, and the jxb:version and jxb:extensionBindingPrefixes attribu
 			</complexType>
 		</schema>
 
+#### Write your delegate class
+In this example, it is a delegate with a one-argument constructor.
+Note that the plugin gets all information for code generation from
+the binding customizations above. It does not in any way parse or access
+the source code of the delegate class. This code must however be accessible when
+the generated class is compiled by the java compiler.
+
+		package org.namespace.my.myschema;
+		
+		public class Delegate {
+			private final MyType myType;
+			
+			public Delegate(final MyType myType) {
+				this.myType = myType;
+			}
+			
+			@Override
+			public int hashCode() {
+				return myType.getCreatedAt().hashCode() ^ myType.getName().hashCode();
+			}
+		}
+		
+		
 #### Use the generated "hashCode" method
 You can now write something like this:
 
