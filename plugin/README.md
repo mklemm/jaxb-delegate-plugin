@@ -140,7 +140,6 @@ file.
 In any case, you must declare a namespace prefix for the "http://www.codesup.net/jaxb/plugins/delegate"
 namespace, and then use (at least) the "method" customization. Also note the declaration of
 the JAXB namespace, and the jxb:version and jxb:extensionBindingPrefixes attributes.
-Of course, the binding customizations can also be applied in a separate bindings file.
 Note that the "delegate" binding customization can only be applied to a named or
 anonymous complexType declaration.
 
