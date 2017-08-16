@@ -192,7 +192,11 @@ public class DelegatePlugin extends AbstractPlugin {
 			for (final JVar param:params) {
 				invoke.arg(param);
 			}
-			implMethod.body()._return(invoke);
+			if(returnType.compareTo(JType.parse(model, "void")) == 0) {
+				implMethod.body().add(invoke);
+			} else {
+				implMethod.body()._return(invoke);
+			}
 		}
 	}
 
@@ -312,6 +316,7 @@ public class DelegatePlugin extends AbstractPlugin {
 
 
 	private JType parseType(final JCodeModel model, final String typeSpec) {
+		if(typeSpec == null) return JType.parse(model,"void");
 		try {
 			return JType.parse(model, typeSpec);
 		} catch (final IllegalArgumentException e) {

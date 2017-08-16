@@ -23,6 +23,18 @@
 									<dg:documentation>The object to compare with</dg:documentation>
 								</dg:param>
 							</dg:method>
+							<dg:method name="voidMethod1" type="void">
+								<dg:documentation>A void Method</dg:documentation>
+								<dg:param name="other" type="java.lang.Object">
+									<dg:documentation>An argument</dg:documentation>
+								</dg:param>
+							</dg:method>
+							<dg:method name="voidMethod2">
+								<dg:documentation>Another void Method</dg:documentation>
+								<dg:param name="other" type="java.lang.Object">
+									<dg:documentation>An argument</dg:documentation>
+								</dg:param>
+							</dg:method>
 							<dg:method name="hashCode" type="int"/>
 						</dg:delegate>
 				</appinfo>

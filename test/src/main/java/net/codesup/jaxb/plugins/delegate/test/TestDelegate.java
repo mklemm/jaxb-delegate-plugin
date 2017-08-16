@@ -15,6 +15,15 @@ public class TestDelegate {
 		return o instanceof TestDelegeeType && ((TestDelegeeType)o).getUserId().equals(this.delegee.getUserId());
 	}
 
+
+	public void voidMethod1(Object obj) {
+
+	}
+
+	public void voidMethod2(Object obj) {
+
+	}
+
 	@Override
 	public int hashCode() {
 		return this.delegee != null ? this.delegee.getUserId().hashCode() : 0;
