@@ -8,3 +8,4 @@ pom.xml.next
 release.properties
 *.iml
 .idea/
+jaxb-delegate-plugin.iml
