@@ -24,21 +24,16 @@
 package net.codesup.jaxb.plugins.delegate;
 
 import java.lang.reflect.Modifier;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 import com.kscs.util.plugins.xjc.base.AbstractPlugin;
 import com.sun.codemodel.JClass;
@@ -57,6 +52,10 @@ import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.model.CPluginCustomization;
 import com.sun.tools.xjc.outline.ClassOutline;
 import com.sun.tools.xjc.outline.Outline;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import static java.lang.Thread.currentThread;
 
@@ -301,14 +300,10 @@ public class DelegatePlugin extends AbstractPlugin {
 				contextClassLoader = Thread.currentThread().getContextClassLoader();
 			} else {
 				contextClassLoader = (ClassLoader) java.security.AccessController.doPrivileged(
-						new java.security.PrivilegedAction() {
-							public java.lang.Object run() {
-								return currentThread().getContextClassLoader();
-							}
-						});
+						(PrivilegedAction)currentThread()::getContextClassLoader);
 			}
 			return contextClassLoader.loadClass(jClass.binaryName());
-		} catch (ClassNotFoundException e) {
+		} catch (final ClassNotFoundException e) {
 			// then the default mechanism.
 			return Class.forName(jClass.binaryName());
 		}
@@ -320,7 +315,8 @@ public class DelegatePlugin extends AbstractPlugin {
 		try {
 			return JType.parse(model, typeSpec);
 		} catch (final IllegalArgumentException e) {
-			return model.ref(typeSpec);
+			final ParameterizedType p = ParameterizedType.parse(typeSpec);
+			return p.createModelClass(model);
 		}
 	}
 
