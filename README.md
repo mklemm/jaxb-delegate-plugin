@@ -2,6 +2,18 @@
 Plugin for the JAXB (Java API for XML Binding) Schema-to-Source compiler (XJC) that generates code
 to add arbitrary methods to classes generated from an XML Schema document.
 
+## History
+### *1.0.0*
+- First public release
+
+### *1.1.0*
+- Small fixes for void method generation
+
+### *2.0.0*
+- Fixed handling of parameterized java types as parameter and method return types
+- At least Java 8 is required now
+
+
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
 but also additional derived property values must be implemented externally to the
@@ -125,7 +137,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>1.0.0</version>
+                                <version>2.0.0</version>
                             </plugin>
                         </plugins>
                     </configuration>
