@@ -28,12 +28,12 @@
 	  -->
 	<simpleType name="java-qualified-identifier">
 		<restriction base="string">
-			<pattern value="(\w(\w|\$)*)(\.(\w|\$)*)*"/>
+			<pattern value="(\w(\w|\$|&lt;|&gt;|,)*)(\.(\w|\$|&lt;|&gt;|,)*)*"/>
 		</restriction>
 	</simpleType>
 	<simpleType name="java-identifier">
 		<restriction base="string">
-			<pattern value="(\w(\w|\$)*)"/>
+			<pattern value="(\w(\w|\$|&lt;|&gt;|,)*)"/>
 		</restriction>
 	</simpleType>
 	<complexType name="method-parameter-type">

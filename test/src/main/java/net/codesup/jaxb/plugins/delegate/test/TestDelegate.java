@@ -1,5 +1,10 @@
 package net.codesup.jaxb.plugins.delegate.test;
 
+import java.sql.ResultSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * @author Mirko Klemm 2016-11-02
  */
@@ -22,6 +27,10 @@ public class TestDelegate {
 
 	public void voidMethod2(Object obj) {
 
+	}
+
+	public Map<Optional<String>, List<String>> genericTypeMethod(final Optional<ResultSet> obj) {
+		return null;
 	}
 
 	@Override

@@ -1,19 +1,28 @@
 package net.codesup.jaxb.plugins.delegate;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
 
+/**
+ * Represents a parameterized type
+ */
 public class ParameterizedType {
-	public static final Pattern TYPEARG_REGEX = Pattern.compile("(\\w(?:\\w|\\.)*)(?:\\<(\\w(?:\\w|\\.|\\,|\\<|\\>)*)+\\>)?");
+	private static final char OPEN = '<';
+	private static final char CLOSE = '>';
+	private static final char SEP = ',';
 
-	public String getTypeName() {
+	private final String typeName;
+	private final List<ParameterizedType> typeArgs;
+
+	private ParameterizedType(final Token token) {
+		this.typeName = token.getContent().trim();
+		this.typeArgs = token.getChildren().stream().map(ParameterizedType::new).collect(Collectors.toList());
+	}
+
+	String getTypeName() {
 		return this.typeName;
 	}
 
@@ -21,24 +30,56 @@ public class ParameterizedType {
 		return this.typeArgs;
 	}
 
-	private final String typeName;
-	private final List<ParameterizedType> typeArgs;
-
-	public ParameterizedType(final String typeName, final List<ParameterizedType> typeArgs) {
-		this.typeName = typeName;
-		this.typeArgs = typeArgs;
+	static ParameterizedType parse(final String spec) {
+		final Token token = Token.parse(spec, ParameterizedType.OPEN, ParameterizedType.SEP, ParameterizedType.CLOSE);
+		return new ParameterizedType(token);
 	}
 
-	public static ParameterizedType parse(final String spec) {
-		int argStart = spec.indexOf('<');
-		int argEnd = spec.lastIndexOf('>');
-		final String typeName = spec.substring(0, argStart);
-		final String innerSpecs = spec.substring(argStart + 1, argEnd);
-
+	JClass createModelClass(final JCodeModel model) {
+		if(this.typeArgs.isEmpty()) {
+			return model.ref(this.typeName);
+		} else {
+			return model.ref(this.typeName).narrow(this.typeArgs.stream().map(a -> a.createModelClass(model)).collect(Collectors.toList()));
+		}
 	}
 
-	public JClass createModelClass(final JCodeModel model) {
-		return model.ref(this.typeName).narrow(this.typeArgs.stream().map(a -> a.createModelClass(model)).collect(Collectors.toList()));
+	String toJson() {
+		return toJson(0);
+	}
+
+	private String toJson(final int level) {
+		final StringBuilder sb = new StringBuilder();
+		indent(sb, level);
+		sb.append("{\n");
+		indent(sb, level + 1);
+		sb.append("name: ");
+		sb.append(this.typeName);
+		sb.append(",\n");
+		if(!this.typeArgs.isEmpty()) {
+			indent(sb, level + 1);
+			sb.append("typeArgs: {\n");
+			boolean first = true;
+			for (final ParameterizedType typeArg : this.typeArgs) {
+				if (first) {
+					first = false;
+				} else {
+					indent(sb, level + 1);
+					sb.append(",\n");
+				}
+				sb.append(typeArg.toJson(level + 2));
+			}
+			indent(sb, level + 1);
+			sb.append("}\n");
+		}
+		indent(sb, level);
+		sb.append("}\n");
+		return sb.toString();
+	}
+
+	private static void indent(final StringBuilder sb, final int level) {
+		for(int i = 0; i < level; i++) {
+			sb.append("\t");
+		}
 	}
 
 	@Override

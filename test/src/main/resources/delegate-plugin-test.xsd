@@ -35,6 +35,12 @@
 									<dg:documentation>An argument</dg:documentation>
 								</dg:param>
 							</dg:method>
+							<dg:method name="genericTypeMethod" type="java.util.Map&lt;java.util.Optional&lt;java.lang.String&gt;,java.util.List&lt;java.lang.String&gt;&gt;">
+								<dg:documentation>Method with a parameterized type</dg:documentation>
+								<dg:param name="other" type="java.util.Optional&lt;java.sql.ResultSet&gt;">
+									<dg:documentation>An argument</dg:documentation>
+								</dg:param>
+							</dg:method>
 							<dg:method name="hashCode" type="int"/>
 						</dg:delegate>
 				</appinfo>
