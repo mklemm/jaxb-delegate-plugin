@@ -48,6 +48,19 @@
 		<attribute name="type" type="tns:java-qualified-identifier"/>
 		<attribute name="name" type="token"/>
 	</complexType>
+	<complexType name="type-parameter-type">
+		<annotation>
+			<documentation>
+				Represents a type parameter specification.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="documentation" type="string" minOccurs="0"/>
+		</sequence>
+		<attribute name="extends" type="tns:java-qualified-identifier"/>
+		<attribute name="super" type="tns:java-qualified-identifier"/>
+		<attribute name="name" type="token" use="required"/>
+	</complexType>
 	<element name="method">
 		<annotation>
 			<documentation>
@@ -58,6 +71,7 @@
 		<complexType>
 			<sequence>
 				<element name="documentation" type="string" minOccurs="0"/>
+				<element name="type-param" type="tns:type-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
 				<element name="param" type="tns:method-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="name" type="tns:java-identifier">

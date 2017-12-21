@@ -30,10 +30,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import com.kscs.util.plugins.xjc.base.AbstractPlugin;
 import com.sun.codemodel.JClass;
@@ -47,15 +53,12 @@ import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JType;
+import com.sun.codemodel.JTypeVar;
 import com.sun.codemodel.JVar;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.model.CPluginCustomization;
 import com.sun.tools.xjc.outline.ClassOutline;
 import com.sun.tools.xjc.outline.Outline;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 import static java.lang.Thread.currentThread;
 
@@ -165,6 +168,13 @@ public class DelegatePlugin extends AbstractPlugin {
 			}
 			int i=0;
 			final List<JVar> params= new ArrayList<>();
+			for (final TypeParameterType param : method.getTypeParam()) {
+				final JClass extendsType = param.getExtends() == null ? null : (JClass)parseType(model, param.getExtends());
+				final JTypeVar implParam = implMethod.generify(param.getName(), extendsType);
+				if(param.getDocumentation() != null) {
+					implMethod.javadoc().addParam(param.getName()).append(param.getDocumentation());
+				}
+			}
 			for (final MethodParameterType param : method.getParam()) {
 				final JType paramType = parseType(model, param.getType());
 				final JVar implParam = implMethod.param(paramType, coalesce(param.getName(), "p" + i++));
