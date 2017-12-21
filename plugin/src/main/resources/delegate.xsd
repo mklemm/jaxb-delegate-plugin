@@ -131,6 +131,7 @@
 		<complexType>
 			<sequence>
 				<element name="documentation" type="string" minOccurs="0"/>
+				<element name="type-param" type="tns:type-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
 				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="id" type="ID" use="optional"/>

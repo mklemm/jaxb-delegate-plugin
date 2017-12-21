@@ -1,5 +1,6 @@
 package net.codesup.jaxb.plugins.delegate.test;
 
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,7 @@ import java.util.Optional;
 /**
  * @author Mirko Klemm 2016-11-02
  */
-public class TestDelegate {
+public class TestDelegate<T extends Comparable<T>> {
 	private final TestDelegeeType delegee;
 
 	public TestDelegate(final TestDelegeeType delegee) {
@@ -21,11 +22,11 @@ public class TestDelegate {
 	}
 
 
-	public void voidMethod1(Object obj) {
+	public <A extends Serializable>void voidMethod2(A obj) {
 
 	}
 
-	public void voidMethod2(Object obj) {
+	public void voidMethod1(Object obj) {
 
 	}
 

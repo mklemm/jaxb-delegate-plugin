@@ -17,6 +17,7 @@
 			<annotation>
 				<appinfo>
 						<dg:delegate class="net.codesup.jaxb.plugins.delegate.test.TestDelegate">
+							<dg:type-param name="T" extends="Comparable&lt;T&gt;"/>
 							<dg:method name="equals" type="boolean">
 								<dg:documentation>This overrides Object.equals()</dg:documentation>
 								<dg:param name="other" type="java.lang.Object">
@@ -31,7 +32,8 @@
 							</dg:method>
 							<dg:method name="voidMethod2">
 								<dg:documentation>Another void Method</dg:documentation>
-								<dg:param name="other" type="java.lang.Object">
+								<dg:type-param name="A" extends="java.io.Serializable"/>
+								<dg:param name="other" type="A">
 									<dg:documentation>An argument</dg:documentation>
 								</dg:param>
 							</dg:method>

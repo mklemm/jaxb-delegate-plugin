@@ -86,12 +86,14 @@ public class DelegatePlugin extends AbstractPlugin {
 	private static final String DELEGATE_CUSTOMIZATION_NAME = "delegate";
 	private static final String METHOD_CUSTOMIZATION_NAME = "method";
 	private static final String PARAM_CUSTOMIZATION_NAME = "param";
+	private static final String TYPE_PARAM_CUSTOMIZATION_NAME = "type-param";
 	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
 	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
 			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
 			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
 			DelegatePlugin.METHOD_CUSTOMIZATION_NAME,
 			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
+			DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME,
 			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
 	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
@@ -157,6 +159,10 @@ public class DelegatePlugin extends AbstractPlugin {
 		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
 		if(delegate.getDocumentation() != null) {
 			delegateField.javadoc().append(delegate.getDocumentation());
+		}
+		for(final TypeParameterType typeParam : delegate.getTypeParam()) {
+			final JClass extendsType = typeParam.getExtends() == null ? null : (JClass)parseType(model, typeParam.getExtends());
+			definedClass.generify(typeParam.getName(), extendsType);
 		}
 		for (final Method method : delegate.getMethod()) {
 			final boolean staticMethod = coalesce(method.isStatic(), Boolean.FALSE);
