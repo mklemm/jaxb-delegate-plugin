@@ -172,15 +172,17 @@ public class DelegatePlugin extends AbstractPlugin {
 			if(method.getDocumentation() != null) {
 				implMethod.javadoc().append(method.getDocumentation());
 			}
-			int i=0;
-			final List<JVar> params= new ArrayList<>();
+			final List<JTypeVar> typeParams= new ArrayList<>();
 			for (final TypeParameterType param : method.getTypeParam()) {
 				final JClass extendsType = param.getExtends() == null ? null : (JClass)parseType(model, param.getExtends());
 				final JTypeVar implParam = implMethod.generify(param.getName(), extendsType);
+				typeParams.add(implParam);
 				if(param.getDocumentation() != null) {
 					implMethod.javadoc().addParam(param.getName()).append(param.getDocumentation());
 				}
 			}
+			final List<JVar> params= new ArrayList<>();
+			int i=0;
 			for (final MethodParameterType param : method.getParam()) {
 				final JType paramType = parseType(model, param.getType());
 				final JVar implParam = implMethod.param(paramType, coalesce(param.getName(), "p" + i++));
@@ -207,6 +209,9 @@ public class DelegatePlugin extends AbstractPlugin {
 			for (final JVar param:params) {
 				invoke.arg(param);
 			}
+//			for (final JTypeVar typeParam:typeParams) {
+//				invoke.arg(typeParam);
+//			}
 			if(returnType.compareTo(JType.parse(model, "void")) == 0) {
 				implMethod.body().add(invoke);
 			} else {
