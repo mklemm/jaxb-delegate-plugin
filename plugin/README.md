@@ -13,6 +13,9 @@ to add arbitrary methods to classes generated from an XML Schema document.
 - Fixed handling of parameterized java types as parameter and method return types
 - At least Java 8 is required now
 
+### *2.1.0*
+- Added support for method and class type parameters
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
@@ -137,7 +140,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>2.0.0</version>
+                                <version>2.1.0</version>
                             </plugin>
                         </plugins>
                     </configuration>
