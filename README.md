@@ -69,7 +69,7 @@ customizations and their use.
 ## Reference
 ### Plugin artifact
 groupId: net.codesup.util
-artifactId: jaxb-format-plugin
+artifactId: jaxb-delegate-plugin
 
 ### Plugin Activation
 		-Xdelegate
