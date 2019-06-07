@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
 		xmlns:tns="http://www.codesup.net/jaxb/plugins/delegate"
+		xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+		jxb:version="2.1"
 		elementFormDefault="qualified"
 		targetNamespace="http://www.codesup.net/jaxb/plugins/delegate">
 	<!--
@@ -163,11 +165,33 @@
 			</attribute>
 		</complexType>
 	</element>
+	<element name="delegate-ref">
+		<annotation>
+			<documentation>
+				References a delegate definition declared elsewhere in the same
+				JAXB model. It isn't declared as type IDREF, since it is also allowed
+				to reference declaratins in included or imported schema or binding files.
+			</documentation>
+		</annotation>
+		<complexType>
+			<attribute name="refid" type="token" use="required"/>
+		</complexType>
+	</element>
 	<element name="delegates">
+		<annotation>
+			<documentation>
+				Acts as a container for multiple delegate definitions, in order to
+				bundle multiple declarations under one class, since in some
+				cases only a single customization of a given type is allowed in a JAXB model.
+			</documentation>
+		</annotation>
 		<complexType>
 			<sequence>
 				<element name="documentation" type="string" minOccurs="0"/>
-				<element ref="tns:delegate" minOccurs="0" maxOccurs="unbounded"/>
+				<choice maxOccurs="unbounded">
+					<element ref="tns:delegate"/>
+					<element ref="tns:delegate-ref"/>
+				</choice>
 			</sequence>
 		</complexType>
 	</element>

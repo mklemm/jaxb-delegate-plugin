@@ -28,7 +28,9 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.xml.bind.JAXBContext;
@@ -70,6 +72,25 @@ import static java.lang.Thread.currentThread;
  */
 public class DelegatePlugin extends AbstractPlugin {
 	private static final JAXBContext JAXB_CONTEXT;
+	private static final ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle(DelegatePlugin.class.getName());
+	private static final String OPTION_NAME = "-Xdelegate";
+	private static final String CUSTOMIZATION_NS = "http://www.codesup.net/jaxb/plugins/delegate";
+	private static final String DELEGATES_CUSTOMIZATION_NAME = "delegates";
+	private static final String DELEGATE_CUSTOMIZATION_NAME = "delegate";
+	private static final String DELEGATE_REF_CUSTOMIZATION_NAME = "delegate-ref";
+	private static final String METHOD_CUSTOMIZATION_NAME = "method";
+	private static final String PARAM_CUSTOMIZATION_NAME = "param";
+	private static final String TYPE_PARAM_CUSTOMIZATION_NAME = "type-param";
+	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
+	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
+			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
+			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
+			DelegatePlugin.DELEGATE_REF_CUSTOMIZATION_NAME,
+			DelegatePlugin.METHOD_CUSTOMIZATION_NAME,
+			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
+			DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME,
+			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
+	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
 	static {
 		try {
@@ -78,24 +99,6 @@ public class DelegatePlugin extends AbstractPlugin {
 			throw new RuntimeException(e);
 		}
 	}
-
-	private static final ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle(DelegatePlugin.class.getName());
-	private static final String OPTION_NAME = "-Xdelegate";
-	private static final String CUSTOMIZATION_NS = "http://www.codesup.net/jaxb/plugins/delegate";
-	private static final String DELEGATES_CUSTOMIZATION_NAME = "delegates";
-	private static final String DELEGATE_CUSTOMIZATION_NAME = "delegate";
-	private static final String METHOD_CUSTOMIZATION_NAME = "method";
-	private static final String PARAM_CUSTOMIZATION_NAME = "param";
-	private static final String TYPE_PARAM_CUSTOMIZATION_NAME = "type-param";
-	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
-	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
-			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
-			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
-			DelegatePlugin.METHOD_CUSTOMIZATION_NAME,
-			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
-			DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME,
-			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
-	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
 	@Override
 	public String getOptionName() {
@@ -121,20 +124,72 @@ public class DelegatePlugin extends AbstractPlugin {
 	public boolean run(final Outline outline, final Options opt, final ErrorHandler errorHandler) throws SAXException {
 		try {
 			final Unmarshaller unmarshaller = DelegatePlugin.JAXB_CONTEXT.createUnmarshaller();
+			final Map<String, Delegate> delegateCache = new HashMap<>();
 			for (final ClassOutline classOutline : outline.getClasses()) {
 				final CPluginCustomization delegatesCustomization = getCustomizationElement(classOutline, DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME);
 				if (delegatesCustomization != null) {
 					delegatesCustomization.markAsAcknowledged();
 					final JAXBElement<Delegates> delegatesElement = unmarshaller.unmarshal(delegatesCustomization.element, Delegates.class);
-					for (final Delegate delegate : delegatesElement.getValue().getDelegate()) {
-						generateDelegateReference(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
-					}
+					delegatesElement.getValue().getDelegateOrDelegateRef().stream()
+							.filter(Delegate.class::isInstance)
+							.map(Delegate.class::cast)
+							.forEach(delegate -> {
+								if(delegate.getId() != null) {
+									delegateCache.put(delegate.getId(), delegate);
+								}
+								generateDelegateCode(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
+							});
 				} else {
 					final CPluginCustomization delegateCustomization = getCustomizationElement(classOutline, DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME);
 					if (delegateCustomization != null) {
 						delegateCustomization.markAsAcknowledged();
 						final JAXBElement<Delegate> delegateElement = unmarshaller.unmarshal(delegateCustomization.element, Delegate.class);
-						generateDelegateReference(outline, errorHandler, classOutline, delegateElement.getValue(), delegateCustomization.locator);
+						final Delegate delegate = delegateElement.getValue();
+						if(delegate.getId() != null) {
+							delegateCache.put(delegate.getId(), delegate);
+						}
+						generateDelegateCode(outline, errorHandler, classOutline, delegate, delegateCustomization.locator);
+					}
+				}
+			}
+			for (final ClassOutline classOutline : outline.getClasses()) {
+				final CPluginCustomization delegatesCustomization = getCustomizationElement(classOutline, DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME);
+				if (delegatesCustomization != null) {
+					delegatesCustomization.markAsAcknowledged();
+					final JAXBElement<Delegates> delegatesElement = unmarshaller.unmarshal(delegatesCustomization.element, Delegates.class);
+					delegatesElement.getValue().getDelegateOrDelegateRef().stream()
+							.filter(DelegateRef.class::isInstance)
+							.map(DelegateRef.class::cast)
+							.forEach(delegateRef -> {
+										final String delegateRefId = delegateRef.getRefid();
+										final Delegate delegate = delegateCache.get(delegateRefId);
+										if (delegate != null) {
+											generateDelegateCode(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
+										} else {
+											try {
+												errorHandler.error(new SAXParseException(getMessage("error.invalidRef", delegateRef.getRefid()), delegatesCustomization.locator));
+											} catch(final SAXException e) {
+
+											}
+										}
+									}
+							);
+				} else {
+					final CPluginCustomization delegateRefCustomization = getCustomizationElement(classOutline, DelegatePlugin.DELEGATE_REF_CUSTOMIZATION_NAME);
+					if (delegateRefCustomization != null) {
+						delegateRefCustomization.markAsAcknowledged();
+						final JAXBElement<DelegateRef> delegateRef = unmarshaller.unmarshal(delegateRefCustomization.element, DelegateRef.class);
+						final String delegateRefId = delegateRef.getValue().getRefid();
+						final Delegate delegate = delegateCache.get(delegateRefId);
+						if (delegate != null) {
+							generateDelegateCode(outline, errorHandler, classOutline, delegate, delegateRefCustomization.locator);
+						} else {
+							try {
+								errorHandler.error(new SAXParseException(getMessage("error.invalidRef", delegateRef.getValue().getRefid()), delegateRefCustomization.locator));
+							} catch (final SAXException e) {
+
+							}
+						}
 					}
 				}
 			}
@@ -145,9 +200,13 @@ public class DelegatePlugin extends AbstractPlugin {
 		return true;
 	}
 
-	private void generateDelegateReference(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation, final Locator rootLocator) throws SAXException {
-		if(delegateAnnotation.getClazz() == null) {
-			errorHandler.error(new SAXParseException(getMessage("error.classRequired"), rootLocator));
+	private void generateDelegateCode(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation, final Locator rootLocator) {
+		if (delegateAnnotation.getClazz() == null) {
+			try {
+				errorHandler.error(new SAXParseException(getMessage("error.classRequired"), rootLocator));
+			} catch (final SAXException e) {
+				// do nothing
+			}
 			return;
 		}
 		final JCodeModel model = outline.getCodeModel();
@@ -157,10 +216,10 @@ public class DelegatePlugin extends AbstractPlugin {
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
 		final JDefinedClass definedClass = classOutline.implClass;
 		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
-		if(delegate.getDocumentation() != null) {
+		if (delegate.getDocumentation() != null) {
 			delegateField.javadoc().append(delegate.getDocumentation());
 		}
-		for(final TypeParameterType typeParam : delegate.getTypeParam()) {
+		for (final TypeParameterType typeParam : delegate.getTypeParam()) {
 			final JClass extendsType = typeParam.getExtends() == null ? null : (JClass)parseType(model, typeParam.getExtends());
 			definedClass.generify(typeParam.getName(), extendsType);
 		}
@@ -169,36 +228,36 @@ public class DelegatePlugin extends AbstractPlugin {
 			final int modifiers = parseModifiers(coalesce(method.getModifiers(), "public"));
 			final JType returnType = parseType(model, method.getType());
 			final JMethod implMethod = definedClass.method(staticMethod ? JMod.STATIC | modifiers : modifiers, returnType, method.getName());
-			if(method.getDocumentation() != null) {
+			if (method.getDocumentation() != null) {
 				implMethod.javadoc().append(method.getDocumentation());
 			}
-			final List<JTypeVar> typeParams= new ArrayList<>();
+			final List<JTypeVar> typeParams = new ArrayList<>();
 			for (final TypeParameterType param : method.getTypeParam()) {
 				final JClass extendsType = param.getExtends() == null ? null : (JClass)parseType(model, param.getExtends());
 				final JTypeVar implParam = implMethod.generify(param.getName(), extendsType);
 				typeParams.add(implParam);
-				if(param.getDocumentation() != null) {
+				if (param.getDocumentation() != null) {
 					implMethod.javadoc().addParam(param.getName()).append(param.getDocumentation());
 				}
 			}
-			final List<JVar> params= new ArrayList<>();
-			int i=0;
+			final List<JVar> params = new ArrayList<>();
+			int i = 0;
 			for (final MethodParameterType param : method.getParam()) {
 				final JType paramType = parseType(model, param.getType());
 				final JVar implParam = implMethod.param(paramType, coalesce(param.getName(), "p" + i++));
 				params.add(implParam);
-				if(param.getDocumentation() != null) {
+				if (param.getDocumentation() != null) {
 					implMethod.javadoc().addParam(implParam).append(param.getDocumentation());
 				}
 			}
 			final JInvocation invoke;
 			if (staticDelegate) {
 				invoke = delegateClass.staticInvoke(method.getName());
-				if(!staticMethod) {
+				if (!staticMethod) {
 					invoke.arg(JExpr._this());
 				}
 			} else {
-				if(staticMethod) {
+				if (staticMethod) {
 					invoke = delegateClass.staticInvoke(method.getName());
 				} else {
 					final JConditional ifStatement = implMethod.body()._if(delegateField.eq(JExpr._null()));
@@ -206,13 +265,13 @@ public class DelegatePlugin extends AbstractPlugin {
 					invoke = delegateField.invoke(method.getName());
 				}
 			}
-			for (final JVar param:params) {
+			for (final JVar param : params) {
 				invoke.arg(param);
 			}
 //			for (final JTypeVar typeParam:typeParams) {
 //				invoke.arg(typeParam);
 //			}
-			if(returnType.compareTo(JType.parse(model, "void")) == 0) {
+			if (returnType.compareTo(JType.parse(model, "void")) == 0) {
 				implMethod.body().add(invoke);
 			} else {
 				implMethod.body()._return(invoke);
@@ -221,15 +280,15 @@ public class DelegatePlugin extends AbstractPlugin {
 	}
 
 	private Delegate gatherRuntimeInformation(final Delegate delegateAnnotation, final JClass delegateClass) {
-		if(delegateClass instanceof JDeclaration) {
+		if (delegateClass instanceof JDeclaration) {
 			try {
 				final Class<?> referencedClass = findRuntimeClass(delegateClass);
-				if(delegateAnnotation.getMethod().isEmpty()) {
+				if (delegateAnnotation.getMethod().isEmpty()) {
 					for (final java.lang.reflect.Method runtimeMethod : referencedClass.getMethods()) {
 						delegateAnnotation.getMethod().add(createMethodDescriptor(delegateAnnotation, runtimeMethod));
 					}
 				} else {
-					for(final Method method:delegateAnnotation.getMethod()) {
+					for (final Method method : delegateAnnotation.getMethod()) {
 						try {
 							final java.lang.reflect.Method runtimeMethod = findRuntimeMethod(referencedClass, method);
 							extendMethodDescriptor(delegateAnnotation, method, runtimeMethod);
@@ -246,12 +305,12 @@ public class DelegatePlugin extends AbstractPlugin {
 	}
 
 	private java.lang.reflect.Method findRuntimeMethod(final Class<?> referencedClass, final Method method) throws NoSuchMethodException {
-		if(method.getParam().isEmpty()) {
+		if (method.getParam().isEmpty()) {
 			try {
 				return referencedClass.getMethod(method.getName());
-			} catch(final NoSuchMethodException nsmx) {
-				for(final java.lang.reflect.Method runtimeMethod:referencedClass.getMethods()) {
-					if(runtimeMethod.getName().equals(method.getName())) {
+			} catch (final NoSuchMethodException nsmx) {
+				for (final java.lang.reflect.Method runtimeMethod : referencedClass.getMethods()) {
+					if (runtimeMethod.getName().equals(method.getName())) {
 						return runtimeMethod;
 					}
 				}
@@ -284,18 +343,18 @@ public class DelegatePlugin extends AbstractPlugin {
 	}
 
 	private Method extendMethodDescriptor(final Delegate delegateAnnotation, final Method method, final java.lang.reflect.Method runtimeMethod) {
-		if(method.getModifiers() == null) {
+		if (method.getModifiers() == null) {
 			method.setModifiers(Modifier.toString(runtimeMethod.getModifiers() & ~Modifier.STATIC));
 		}
-		if(method.getType() == null) {
+		if (method.getType() == null) {
 			method.setType(runtimeMethod.getReturnType().getName());
 		}
-		if(method.getParam().isEmpty()) {
+		if (method.getParam().isEmpty()) {
 			inferParameters(method, runtimeMethod);
 		} else {
 			int paramIndex = 0;
-			for(final MethodParameterType param : method.getParam()) {
-				if(param.getType() == null) {
+			for (final MethodParameterType param : method.getParam()) {
+				if (param.getType() == null) {
 					param.setType(runtimeMethod.getParameterTypes()[paramIndex++].getName());
 				}
 			}
@@ -320,7 +379,7 @@ public class DelegatePlugin extends AbstractPlugin {
 			if (System.getSecurityManager() == null) {
 				contextClassLoader = Thread.currentThread().getContextClassLoader();
 			} else {
-				contextClassLoader = (ClassLoader) java.security.AccessController.doPrivileged(
+				contextClassLoader = (ClassLoader)java.security.AccessController.doPrivileged(
 						(PrivilegedAction)currentThread()::getContextClassLoader);
 			}
 			return contextClassLoader.loadClass(jClass.binaryName());
@@ -330,9 +389,8 @@ public class DelegatePlugin extends AbstractPlugin {
 		}
 	}
 
-
 	private JType parseType(final JCodeModel model, final String typeSpec) {
-		if(typeSpec == null) return JType.parse(model,"void");
+		if (typeSpec == null) return JType.parse(model, "void");
 		try {
 			return JType.parse(model, typeSpec);
 		} catch (final IllegalArgumentException e) {

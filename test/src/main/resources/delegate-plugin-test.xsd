@@ -16,7 +16,7 @@
 		<complexType>
 			<annotation>
 				<appinfo>
-						<dg:delegate class="net.codesup.jaxb.plugins.delegate.test.TestDelegate">
+						<dg:delegate id="del1" class="net.codesup.jaxb.plugins.delegate.test.TestDelegate">
 							<dg:type-param name="T" extends="Comparable&lt;T&gt;"/>
 							<dg:method name="equals" type="boolean">
 								<dg:documentation>This overrides Object.equals()</dg:documentation>
@@ -45,6 +45,32 @@
 							</dg:method>
 							<dg:method name="hashCode" type="int"/>
 						</dg:delegate>
+				</appinfo>
+			</annotation>
+			<sequence>
+				<element minOccurs="0" name="user-id" type="string"/>
+				<element minOccurs="0" name="user-last-name" type="string"/>
+				<element minOccurs="0" name="user-first-name" type="string"/>
+				<element minOccurs="0" name="password" type="string"/>
+				<element minOccurs="0" name="role" type="string"/>
+				<element minOccurs="0" name="department" type="string"/>
+				<element minOccurs="0" name="divisions" type="string"/>
+				<element minOccurs="0" name="offices" type="string"/>
+				<element minOccurs="0" name="created-at" type="dateTime"/>
+				<element minOccurs="0" name="created-by" type="string"/>
+				<element minOccurs="0" name="changed-at" type="dateTime"/>
+				<element minOccurs="0" name="changed-by" type="string"/>
+				<element name="confirm-privilege" type="int"/>
+				<element minOccurs="0" name="global-search-term" type="string"/>
+				<element name="auto-logon" type="boolean"/>
+			</sequence>
+		</complexType>
+	</element>
+	<element name="test-delegee-ref-type">
+		<complexType>
+			<annotation>
+				<appinfo>
+						<dg:delegate-ref refid="del1"/>
 				</appinfo>
 			</annotation>
 			<sequence>

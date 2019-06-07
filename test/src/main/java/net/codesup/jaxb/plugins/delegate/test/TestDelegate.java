@@ -16,6 +16,10 @@ public class TestDelegate<T extends Comparable<T>> {
 		this.delegee = delegee;
 	}
 
+	public TestDelegate(final TestDelegeeRefType delegee) {
+		this.delegee = null;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		return o instanceof TestDelegeeType && ((TestDelegeeType)o).getUserId().equals(this.delegee.getUserId());
