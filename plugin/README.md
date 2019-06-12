@@ -16,6 +16,11 @@ to add arbitrary methods to classes generated from an XML Schema document.
 ### *2.1.0*
 - Added support for method and class type parameters
 
+### *2.2.0*
+- Added support for referencing delegate definitions declared elsewhere in the XSD or binding model
+- Added support for nested class delegation
+- Added support for literal class type arguments
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
@@ -140,7 +145,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>2.1.0</version>
+                                <version>2.2.0</version>
                             </plugin>
                         </plugins>
                     </configuration>
