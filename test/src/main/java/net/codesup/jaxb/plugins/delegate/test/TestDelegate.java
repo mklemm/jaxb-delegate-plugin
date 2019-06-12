@@ -9,14 +9,15 @@ import java.util.Optional;
 /**
  * @author Mirko Klemm 2016-11-02
  */
-public class TestDelegate<T extends Comparable<T>> {
-	private final TestDelegeeType delegee;
+public class TestDelegate<T extends Comparable<T>, V, Q extends Serializable> {
+	private final TestDelegeeType<T,Q> delegee;
 
-	public TestDelegate(final TestDelegeeType delegee) {
+
+	public TestDelegate(final TestDelegeeType<T, Q> delegee) {
 		this.delegee = delegee;
 	}
 
-	public TestDelegate(final TestDelegeeRefType delegee) {
+	public TestDelegate(final TestDelegeeRefType<T, Q> delegee) {
 		this.delegee = null;
 	}
 
@@ -30,8 +31,8 @@ public class TestDelegate<T extends Comparable<T>> {
 
 	}
 
-	public void voidMethod1(Object obj) {
-
+	public V voidMethod1(Object obj) {
+		return null;
 	}
 
 	public Map<Optional<String>, List<String>> genericTypeMethod(final Optional<ResultSet> obj) {

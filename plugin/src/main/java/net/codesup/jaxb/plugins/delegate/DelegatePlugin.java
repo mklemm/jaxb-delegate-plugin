@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -81,6 +82,7 @@ public class DelegatePlugin extends AbstractPlugin {
 	private static final String METHOD_CUSTOMIZATION_NAME = "method";
 	private static final String PARAM_CUSTOMIZATION_NAME = "param";
 	private static final String TYPE_PARAM_CUSTOMIZATION_NAME = "type-param";
+	private static final String TYPE_ARG_CUSTOMIZATION_NAME = "type-arg";
 	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
 	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
 			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
@@ -89,6 +91,7 @@ public class DelegatePlugin extends AbstractPlugin {
 			DelegatePlugin.METHOD_CUSTOMIZATION_NAME,
 			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
 			DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME,
+			DelegatePlugin.TYPE_ARG_CUSTOMIZATION_NAME,
 			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
 	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
@@ -201,6 +204,18 @@ public class DelegatePlugin extends AbstractPlugin {
 	}
 
 	private void generateDelegateCode(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation, final Locator rootLocator) {
+		if(delegateAnnotation.getTarget() == null) {
+			generateDelegateCode(outline, errorHandler, classOutline.implClass, delegateAnnotation, rootLocator);
+		} else {
+			generateDelegateCode(outline, errorHandler, Stream.of(classOutline.implClass.listClasses())
+					.filter(JDefinedClass.class::isInstance)
+					.map(JDefinedClass.class::cast)
+					.filter(c -> c.name().equals(delegateAnnotation.getTarget()))
+					.findFirst().orElseThrow(() -> new IllegalArgumentException(getMessage("error.noSuchNestedClass", delegateAnnotation.getTarget(), classOutline.implClass.name()))), delegateAnnotation, rootLocator);
+		}
+	}
+
+	private void generateDelegateCode(final Outline outline, final ErrorHandler errorHandler, final JDefinedClass definedClass, final Delegate delegateAnnotation, final Locator rootLocator) {
 		if (delegateAnnotation.getClazz() == null) {
 			try {
 				errorHandler.error(new SAXParseException(getMessage("error.classRequired"), rootLocator));
@@ -210,18 +225,21 @@ public class DelegatePlugin extends AbstractPlugin {
 			return;
 		}
 		final JCodeModel model = outline.getCodeModel();
-		final JClass delegateClass = model.ref(delegateAnnotation.getClazz());
+		JClass delegateClass = model.ref(delegateAnnotation.getClazz());
 		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
-		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.name());
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
-		final JDefinedClass definedClass = classOutline.implClass;
+		for (final JAXBElement<TypeParameterType> typeParamElement : delegate.getTypeParamOrTypeArg()) {
+			final TypeParameterType typeParameterType = typeParamElement.getValue();
+			final JClass extendsType = typeParameterType.getExtends() == null ? null : (JClass)parseType(model, typeParameterType.getExtends());
+			if(typeParamElement.getName().getLocalPart().equals(DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME)) {
+				definedClass.generify(typeParameterType.getName(), extendsType);
+			}
+			delegateClass = delegateClass.narrow((JClass)parseType(model, typeParameterType.getName()));
+		}
+		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.erasure().name());
 		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
 		if (delegate.getDocumentation() != null) {
 			delegateField.javadoc().append(delegate.getDocumentation());
-		}
-		for (final TypeParameterType typeParam : delegate.getTypeParam()) {
-			final JClass extendsType = typeParam.getExtends() == null ? null : (JClass)parseType(model, typeParam.getExtends());
-			definedClass.generify(typeParam.getName(), extendsType);
 		}
 		for (final Method method : delegate.getMethod()) {
 			final boolean staticMethod = coalesce(method.isStatic(), Boolean.FALSE);

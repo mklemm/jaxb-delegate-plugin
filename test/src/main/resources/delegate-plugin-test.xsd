@@ -18,13 +18,15 @@
 				<appinfo>
 						<dg:delegate id="del1" class="net.codesup.jaxb.plugins.delegate.test.TestDelegate">
 							<dg:type-param name="T" extends="Comparable&lt;T&gt;"/>
+							<dg:type-arg name="String"/>
+							<dg:type-param name="S" extends="java.io.Serializable"/>
 							<dg:method name="equals" type="boolean">
 								<dg:documentation>This overrides Object.equals()</dg:documentation>
 								<dg:param name="other" type="java.lang.Object">
 									<dg:documentation>The object to compare with</dg:documentation>
 								</dg:param>
 							</dg:method>
-							<dg:method name="voidMethod1" type="void">
+							<dg:method name="voidMethod1" type="String">
 								<dg:documentation>A void Method</dg:documentation>
 								<dg:param name="other" type="java.lang.Object">
 									<dg:documentation>An argument</dg:documentation>
@@ -71,6 +73,39 @@
 			<annotation>
 				<appinfo>
 						<dg:delegate-ref refid="del1"/>
+				</appinfo>
+			</annotation>
+			<sequence>
+				<element minOccurs="0" name="user-id" type="string"/>
+				<element minOccurs="0" name="user-last-name" type="string"/>
+				<element minOccurs="0" name="user-first-name" type="string"/>
+				<element minOccurs="0" name="password" type="string"/>
+				<element minOccurs="0" name="role" type="string"/>
+				<element minOccurs="0" name="department" type="string"/>
+				<element minOccurs="0" name="divisions" type="string"/>
+				<element minOccurs="0" name="offices" type="string"/>
+				<element minOccurs="0" name="created-at" type="dateTime"/>
+				<element minOccurs="0" name="created-by" type="string"/>
+				<element minOccurs="0" name="changed-at" type="dateTime"/>
+				<element minOccurs="0" name="changed-by" type="string"/>
+				<element name="confirm-privilege" type="int"/>
+				<element minOccurs="0" name="global-search-term" type="string"/>
+				<element name="auto-logon" type="boolean"/>
+			</sequence>
+		</complexType>
+	</element>
+	<element name="test-delegee-builder-type">
+		<complexType>
+			<annotation>
+				<appinfo>
+					<dg:delegates>
+						<dg:delegate class="BuilderDelegate" target="Builder">
+							<dg:type-arg name="_B"/>
+							<dg:method name="withMoreOptions" type="TestDelegeeBuilderType.Builder&lt;_B&gt;">
+								<dg:param name="val" type="String"/>
+							</dg:method>
+						</dg:delegate>
+					</dg:delegates>
 				</appinfo>
 			</annotation>
 			<sequence>
