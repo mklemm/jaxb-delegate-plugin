@@ -18,14 +18,14 @@
  */
 package net.codesup.jaxb.plugins.delegate.test;
 
-public class BuilderDelegate<B> {
-	private final TestDelegeeBuilderType.Builder<B> builder;
+public class BuilderDelegate<B,P extends TestDelegeeBuilderType.Builder<B>> {
+	private final P builder;
 
-	public BuilderDelegate(final TestDelegeeBuilderType.Builder<B> builder) {
+	public BuilderDelegate(final P builder) {
 		this.builder = builder;
 	}
 
-	public TestDelegeeBuilderType.Builder<B> withMoreOptions(final String o) {
+	public P withMoreOptions(final String o) {
 		return this.builder;
 	}
 }

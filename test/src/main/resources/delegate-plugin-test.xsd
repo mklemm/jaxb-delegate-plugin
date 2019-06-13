@@ -101,7 +101,8 @@
 					<dg:delegates>
 						<dg:delegate class="BuilderDelegate" target="Builder">
 							<dg:type-arg name="_B"/>
-							<dg:method name="withMoreOptions" type="TestDelegeeBuilderType.Builder&lt;_B&gt;">
+							<dg:type-arg name="{delegeeClass}&lt;{delegeeClass.typeParams}&gt;"/>
+							<dg:method name="withMoreOptions" type="{delegeeClass}&lt;{delegeeClass.typeParams}&gt;">
 								<dg:param name="val" type="String"/>
 							</dg:method>
 						</dg:delegate>

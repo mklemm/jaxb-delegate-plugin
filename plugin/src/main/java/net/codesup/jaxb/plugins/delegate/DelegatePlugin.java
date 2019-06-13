@@ -137,7 +137,7 @@ public class DelegatePlugin extends AbstractPlugin {
 							.filter(Delegate.class::isInstance)
 							.map(Delegate.class::cast)
 							.forEach(delegate -> {
-								if(delegate.getId() != null) {
+								if (delegate.getId() != null) {
 									delegateCache.put(delegate.getId(), delegate);
 								}
 								generateDelegateCode(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
@@ -148,7 +148,7 @@ public class DelegatePlugin extends AbstractPlugin {
 						delegateCustomization.markAsAcknowledged();
 						final JAXBElement<Delegate> delegateElement = unmarshaller.unmarshal(delegateCustomization.element, Delegate.class);
 						final Delegate delegate = delegateElement.getValue();
-						if(delegate.getId() != null) {
+						if (delegate.getId() != null) {
 							delegateCache.put(delegate.getId(), delegate);
 						}
 						generateDelegateCode(outline, errorHandler, classOutline, delegate, delegateCustomization.locator);
@@ -171,8 +171,7 @@ public class DelegatePlugin extends AbstractPlugin {
 										} else {
 											try {
 												errorHandler.error(new SAXParseException(getMessage("error.invalidRef", delegateRef.getRefid()), delegatesCustomization.locator));
-											} catch(final SAXException e) {
-
+											} catch (final SAXException e) {
 											}
 										}
 									}
@@ -190,21 +189,20 @@ public class DelegatePlugin extends AbstractPlugin {
 							try {
 								errorHandler.error(new SAXParseException(getMessage("error.invalidRef", delegateRef.getValue().getRefid()), delegateRefCustomization.locator));
 							} catch (final SAXException e) {
-
 							}
 						}
 					}
 				}
 			}
 			return true;
-		} catch (final Exception e) {
+		} catch (final JAXBException e) {
 			errorHandler.error(new SAXParseException(e.getMessage(), outline.getModel().getLocator()));
 		}
 		return true;
 	}
 
 	private void generateDelegateCode(final Outline outline, final ErrorHandler errorHandler, final ClassOutline classOutline, final Delegate delegateAnnotation, final Locator rootLocator) {
-		if(delegateAnnotation.getTarget() == null) {
+		if (delegateAnnotation.getTarget() == null) {
 			generateDelegateCode(outline, errorHandler, classOutline.implClass, delegateAnnotation, rootLocator);
 		} else {
 			generateDelegateCode(outline, errorHandler, Stream.of(classOutline.implClass.listClasses())
@@ -225,16 +223,22 @@ public class DelegatePlugin extends AbstractPlugin {
 			return;
 		}
 		final JCodeModel model = outline.getCodeModel();
+		final Map<TypeRef, JClass> envTypes = new HashMap<>();
 		JClass delegateClass = model.ref(delegateAnnotation.getClazz());
+		envTypes.put(TypeRef.DELEGEE_CLASS, definedClass);
+		envTypes.put(TypeRef.DELEGATE_CLASS, delegateClass);
+		envTypes.put(TypeRef.OUTLINE_CLASS, definedClass.outer() == null ? definedClass : definedClass.outer());
+		final TypeParser typeParser = new TypeParser(model, envTypes);
 		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
 		for (final JAXBElement<TypeParameterType> typeParamElement : delegate.getTypeParamOrTypeArg()) {
 			final TypeParameterType typeParameterType = typeParamElement.getValue();
-			final JClass extendsType = typeParameterType.getExtends() == null ? null : (JClass)parseType(model, typeParameterType.getExtends());
-			if(typeParamElement.getName().getLocalPart().equals(DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME)) {
+			final JClass extendsType = typeParameterType.getExtends() == null ? null : (JClass)typeParser.parse(typeParameterType.getExtends());
+			if (typeParamElement.getName().getLocalPart().equals(DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME)) {
 				definedClass.generify(typeParameterType.getName(), extendsType);
 			}
-			delegateClass = delegateClass.narrow((JClass)parseType(model, typeParameterType.getName()));
+			delegateClass = delegateClass.narrow((JClass)typeParser.parse(typeParameterType.getName()));
+			envTypes.put(TypeRef.DELEGATE_CLASS, definedClass);
 		}
 		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.erasure().name());
 		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
@@ -244,14 +248,14 @@ public class DelegatePlugin extends AbstractPlugin {
 		for (final Method method : delegate.getMethod()) {
 			final boolean staticMethod = coalesce(method.isStatic(), Boolean.FALSE);
 			final int modifiers = parseModifiers(coalesce(method.getModifiers(), "public"));
-			final JType returnType = parseType(model, method.getType());
+			final JType returnType = typeParser.parse(method.getType());
 			final JMethod implMethod = definedClass.method(staticMethod ? JMod.STATIC | modifiers : modifiers, returnType, method.getName());
 			if (method.getDocumentation() != null) {
 				implMethod.javadoc().append(method.getDocumentation());
 			}
 			final List<JTypeVar> typeParams = new ArrayList<>();
 			for (final TypeParameterType param : method.getTypeParam()) {
-				final JClass extendsType = param.getExtends() == null ? null : (JClass)parseType(model, param.getExtends());
+				final JClass extendsType = param.getExtends() == null ? null : (JClass)typeParser.parse(param.getExtends());
 				final JTypeVar implParam = implMethod.generify(param.getName(), extendsType);
 				typeParams.add(implParam);
 				if (param.getDocumentation() != null) {
@@ -261,7 +265,7 @@ public class DelegatePlugin extends AbstractPlugin {
 			final List<JVar> params = new ArrayList<>();
 			int i = 0;
 			for (final MethodParameterType param : method.getParam()) {
-				final JType paramType = parseType(model, param.getType());
+				final JType paramType = typeParser.parse(param.getType());
 				final JVar implParam = implMethod.param(paramType, coalesce(param.getName(), "p" + i++));
 				params.add(implParam);
 				if (param.getDocumentation() != null) {
@@ -404,16 +408,6 @@ public class DelegatePlugin extends AbstractPlugin {
 		} catch (final ClassNotFoundException e) {
 			// then the default mechanism.
 			return Class.forName(jClass.binaryName());
-		}
-	}
-
-	private JType parseType(final JCodeModel model, final String typeSpec) {
-		if (typeSpec == null) return JType.parse(model, "void");
-		try {
-			return JType.parse(model, typeSpec);
-		} catch (final IllegalArgumentException e) {
-			final ParameterizedType p = ParameterizedType.parse(typeSpec);
-			return p.createModelClass(model);
 		}
 	}
 

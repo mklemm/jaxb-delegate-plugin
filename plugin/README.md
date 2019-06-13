@@ -21,6 +21,9 @@ to add arbitrary methods to classes generated from an XML Schema document.
 - Added support for nested class delegation
 - Added support for literal class type arguments
 
+### *2.3.0*
+- Modified syntax for class references and added possible references to XSD
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
