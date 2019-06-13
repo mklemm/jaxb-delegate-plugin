@@ -30,12 +30,30 @@
 	  -->
 	<simpleType name="java-qualified-identifier">
 		<restriction base="string">
-			<pattern value="((\w|\$|_)(\w|\$|&lt;|&gt;|,)*)(\.(\w|\$|_|&lt;|&gt;|,)*)*"/>
+			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)(\.(\w|\$|_|&lt;|&gt;|\{|\}|,)*)*"/>
 		</restriction>
 	</simpleType>
 	<simpleType name="java-identifier">
 		<restriction base="string">
-			<pattern value="((\w|\$|_)(\w|\$|&lt;|&gt;|,)*)"/>
+			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="type-ref">
+		<restriction base="token">
+			<enumeration value="delegeeClass"/>
+			<enumeration value="delegateClass"/>
+			<enumeration value="outlineClass"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="type-ref-property">
+		<restriction base="token">
+			<enumeration value="fullName"/>
+			<enumeration value="name"/>
+			<enumeration value="typeParams"/>
+			<enumeration value="binaryName"/>
+			<enumeration value="typeParams"/>
+			<enumeration value="package"/>
+			<enumeration value="simpleName"/>
 		</restriction>
 	</simpleType>
 	<complexType name="method-parameter-type">
@@ -61,7 +79,7 @@
 		</sequence>
 		<attribute name="extends" type="tns:java-qualified-identifier"/>
 		<attribute name="super" type="tns:java-qualified-identifier"/>
-		<attribute name="name" type="token" use="required"/>
+		<attribute name="name" type="token"/>
 	</complexType>
 	<element name="method">
 		<annotation>
