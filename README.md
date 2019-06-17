@@ -48,6 +48,18 @@ This way, also clients using different programming
 frameworks can consume the XSDs without any issues and base their own logic
 on the additional annotations in the XSD.
 
+## Features
+- Generates methods that delegate to a member instance of the generated class or to static methods
+- One generated class can use multiple delegates
+- Delegate definitions given as binding extensions in the XSD or a binding file can be re-used by 
+  referencing them elsewhere in the schema model.
+- The delegation model can be applied not only to classes generated from complexType definitions,
+  but they can also be applied to inner classes of the generated class, by use of the "target" attribute.
+  This will also work for inner classes generatd by different XJC plugins, like the jaxb2-rich-contract-plugin.
+  So, even nested fluent builder classes can be enhanced with business methods.
+- Types of methods, method parameters, type arguments etc. can be given using a variable expansion syntax,
+  thus further enhancing reusability of definitions. I.e. {delegeeClass} references the generated class that contains the delegate, {delegeeClass.typeParams} references its type parameters.
+
 ## Function
 The "delegate" plugin generates methods that automatically delegate to
 compatible methods of a defined delegate class. The delegate can be a
