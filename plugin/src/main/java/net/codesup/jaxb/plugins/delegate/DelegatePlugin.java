@@ -231,6 +231,7 @@ public class DelegatePlugin extends AbstractPlugin {
 		final TypeParser typeParser = new TypeParser(model, envTypes);
 		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
+		final boolean lazyDelegate = coalesce(delegate.isLazy(), Boolean.FALSE);
 		for (final JAXBElement<TypeParameterType> typeParamElement : delegate.getTypeParamOrTypeArg()) {
 			final TypeParameterType typeParameterType = typeParamElement.getValue();
 			final JClass extendsType = typeParameterType.getExtends() == null ? null : (JClass)typeParser.parse(typeParameterType.getExtends());
@@ -241,7 +242,7 @@ public class DelegatePlugin extends AbstractPlugin {
 			envTypes.put(TypeRef.DELEGATE_CLASS, definedClass);
 		}
 		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.erasure().name());
-		final JFieldVar delegateField = staticDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
+		final JFieldVar delegateField = staticDelegate || !lazyDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
 		if (delegate.getDocumentation() != null) {
 			delegateField.javadoc().append(delegate.getDocumentation());
 		}
@@ -278,13 +279,19 @@ public class DelegatePlugin extends AbstractPlugin {
 				if (!staticMethod) {
 					invoke.arg(JExpr._this());
 				}
-			} else {
+			} else if (lazyDelegate) {
 				if (staticMethod) {
 					invoke = delegateClass.staticInvoke(method.getName());
 				} else {
 					final JConditional ifStatement = implMethod.body()._if(delegateField.eq(JExpr._null()));
 					ifStatement._then().assign(delegateField, JExpr._new(delegateClass).arg(JExpr._this()));
 					invoke = delegateField.invoke(method.getName());
+				}
+			} else {
+				if (staticMethod) {
+					invoke = delegateClass.staticInvoke(method.getName());
+				} else {
+					invoke = JExpr._new(delegateClass).arg(JExpr._this()).invoke(method.getName());
 				}
 			}
 			for (final JVar param : params) {

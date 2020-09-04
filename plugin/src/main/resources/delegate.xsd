@@ -184,6 +184,15 @@
 					</documentation>
 				</annotation>
 			</attribute>
+			<attribute name="lazy" type="boolean">
+				<annotation>
+					<documentation>
+						If true, the delegate instance will not be created on each call
+						of a delegate method, but will be lazily instantiated in the constructor of
+						the delegee class.
+					</documentation>
+				</annotation>
+			</attribute>
 			<attribute name="target" type="tns:java-identifier">
 				<annotation>
 					<documentation>
