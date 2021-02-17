@@ -84,6 +84,7 @@ public class DelegatePlugin extends AbstractPlugin {
 	private static final String TYPE_PARAM_CUSTOMIZATION_NAME = "type-param";
 	private static final String TYPE_ARG_CUSTOMIZATION_NAME = "type-arg";
 	private static final String DOCUMENTATION_CUSTOMIZATION_NAME = "documentation";
+	private static final String ANNOTATE_CUSTOMIZATION_NAME = "annotate";
 	private static final List<String> CUSTOM_ELEMENTS = Arrays.asList(
 			DelegatePlugin.DELEGATES_CUSTOMIZATION_NAME,
 			DelegatePlugin.DELEGATE_CUSTOMIZATION_NAME,
@@ -92,7 +93,8 @@ public class DelegatePlugin extends AbstractPlugin {
 			DelegatePlugin.PARAM_CUSTOMIZATION_NAME,
 			DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME,
 			DelegatePlugin.TYPE_ARG_CUSTOMIZATION_NAME,
-			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME);
+			DelegatePlugin.DOCUMENTATION_CUSTOMIZATION_NAME,
+			DelegatePlugin.ANNOTATE_CUSTOMIZATION_NAME);
 	private static final String DEFAULT_DELEGATE_FIELD_PATTERN = "__delegate%s";
 
 	static {
@@ -139,6 +141,9 @@ public class DelegatePlugin extends AbstractPlugin {
 							.forEach(delegate -> {
 								if (delegate.getId() != null) {
 									delegateCache.put(delegate.getId(), delegate);
+								}
+								if(delegate.getAnnotate() == null) {
+									delegate.setAnnotate(delegatesElement.getValue().getAnnotate());
 								}
 								generateDelegateCode(outline, errorHandler, classOutline, delegate, delegatesCustomization.locator);
 							});
@@ -271,6 +276,20 @@ public class DelegatePlugin extends AbstractPlugin {
 				params.add(implParam);
 				if (param.getDocumentation() != null) {
 					implMethod.javadoc().addParam(implParam).append(param.getDocumentation());
+				}
+				if(param.isNullable() != null && delegate.getAnnotate() != null) {
+					if (param.isNullable()) {
+						implParam.annotate(model.ref(delegate.getAnnotate().getNullable()));
+					} else {
+						implParam.annotate(model.ref(delegate.getAnnotate().getNonNull()));
+					}
+				}
+			}
+			if(method.isNullable() != null && delegate.getAnnotate() != null) {
+				if (method.isNullable()) {
+					implMethod.annotate(model.ref(delegate.getAnnotate().getNullable()));
+				} else {
+					implMethod.annotate(model.ref(delegate.getAnnotate().getNonNull()));
 				}
 			}
 			final JInvocation invoke;

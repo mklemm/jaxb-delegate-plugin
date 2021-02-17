@@ -30,30 +30,29 @@
 	  -->
 	<simpleType name="java-qualified-identifier">
 		<restriction base="string">
-			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)(\.(\w|\$|_|&lt;|&gt;|\{|\}|,)*)*"/>
+			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)(\.(\w|\$|_|&lt;|&gt;|\{|\}|,)*)*" />
 		</restriction>
 	</simpleType>
 	<simpleType name="java-identifier">
 		<restriction base="string">
-			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)"/>
+			<pattern value="((\w|\$|_|\{)(\w|\$|&lt;|&gt;|\{|\}|,)*)" />
 		</restriction>
 	</simpleType>
 	<simpleType name="type-ref">
 		<restriction base="token">
-			<enumeration value="delegeeClass"/>
-			<enumeration value="delegateClass"/>
-			<enumeration value="outlineClass"/>
+			<enumeration value="delegeeClass" />
+			<enumeration value="delegateClass" />
+			<enumeration value="outlineClass" />
 		</restriction>
 	</simpleType>
 	<simpleType name="type-ref-property">
 		<restriction base="token">
-			<enumeration value="fullName"/>
-			<enumeration value="name"/>
-			<enumeration value="typeParams"/>
-			<enumeration value="binaryName"/>
-			<enumeration value="typeParams"/>
-			<enumeration value="package"/>
-			<enumeration value="simpleName"/>
+			<enumeration value="fullName" />
+			<enumeration value="name" />
+			<enumeration value="binaryName" />
+			<enumeration value="typeParams" />
+			<enumeration value="package" />
+			<enumeration value="simpleName" />
 		</restriction>
 	</simpleType>
 	<complexType name="method-parameter-type">
@@ -63,10 +62,11 @@
 			</documentation>
 		</annotation>
 		<sequence>
-			<element name="documentation" type="string" minOccurs="0"/>
+			<element name="documentation" type="string" minOccurs="0" />
 		</sequence>
-		<attribute name="type" type="tns:java-qualified-identifier"/>
-		<attribute name="name" type="token"/>
+		<attribute name="type" type="tns:java-qualified-identifier" />
+		<attribute name="name" type="token" />
+		<attribute name="nullable" type="boolean" />
 	</complexType>
 	<complexType name="type-parameter-type">
 		<annotation>
@@ -75,11 +75,25 @@
 			</documentation>
 		</annotation>
 		<sequence>
-			<element name="documentation" type="string" minOccurs="0"/>
+			<element name="documentation" type="string" minOccurs="0" />
 		</sequence>
-		<attribute name="extends" type="tns:java-qualified-identifier"/>
-		<attribute name="super" type="tns:java-qualified-identifier"/>
-		<attribute name="name" type="token"/>
+		<attribute name="extends" type="tns:java-qualified-identifier" />
+		<attribute name="super" type="tns:java-qualified-identifier" />
+		<attribute name="name" type="token" />
+	</complexType>
+	<complexType name="nullability-annotations">
+		<annotation>
+			<documentation>
+				Specifies which annotation classes to use to add nullability constraints
+				to generated methods and their parameters. Use the "nullable" attribute on
+				method and param elements to specify nullability.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="documentation" type="string" minOccurs="0" />
+		</sequence>
+		<attribute name="non-null" type="tns:java-qualified-identifier" use="required" />
+		<attribute name="nullable" type="tns:java-qualified-identifier" use="required" />
 	</complexType>
 	<element name="method">
 		<annotation>
@@ -90,9 +104,9 @@
 		</annotation>
 		<complexType>
 			<sequence>
-				<element name="documentation" type="string" minOccurs="0"/>
-				<element name="type-param" type="tns:type-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
-				<element name="param" type="tns:method-parameter-type" minOccurs="0" maxOccurs="unbounded"/>
+				<element name="documentation" type="string" minOccurs="0" />
+				<element name="type-param" type="tns:type-parameter-type" minOccurs="0" maxOccurs="unbounded" />
+				<element name="param" type="tns:method-parameter-type" minOccurs="0" maxOccurs="unbounded" />
 			</sequence>
 			<attribute name="name" type="tns:java-identifier">
 				<annotation>
@@ -118,6 +132,7 @@
 					</documentation>
 				</annotation>
 			</attribute>
+			<attribute name="nullable" type="boolean" />
 			<attribute name="static" type="boolean" use="optional">
 				<annotation>
 					<documentation>
@@ -150,14 +165,15 @@
 		</annotation>
 		<complexType>
 			<sequence>
-				<element name="documentation" type="string" minOccurs="0"/>
+				<element name="documentation" type="string" minOccurs="0" />
+				<element name="annotate" type="tns:nullability-annotations" minOccurs="0"/>
 				<choice minOccurs="0" maxOccurs="unbounded">
 					<element name="type-param" type="tns:type-parameter-type" />
 					<element name="type-arg" type="tns:type-parameter-type" />
 				</choice>
-				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded"/>
+				<element ref="tns:method" minOccurs="0" maxOccurs="unbounded" />
 			</sequence>
-			<attribute name="id" type="ID" use="optional"/>
+			<attribute name="id" type="ID" use="optional" />
 			<attribute name="class" type="tns:java-qualified-identifier" use="required">
 				<annotation>
 					<documentation>
@@ -174,7 +190,7 @@
 					<documentation>
 						If true, a utility class reference is generated instead of
 						an instance delegation.
-						All methods must be	public and static and must take an instance of
+						All methods must be public and static and must take an instance of
 						the generated class as the first parameter. This parameter is implicit
 						and must not be contained in the list of parameters declared in the
 						XSD binding annotations.
@@ -214,7 +230,7 @@
 			</documentation>
 		</annotation>
 		<complexType>
-			<attribute name="refid" type="token" use="required"/>
+			<attribute name="refid" type="token" use="required" />
 		</complexType>
 	</element>
 	<element name="delegates">
@@ -227,10 +243,11 @@
 		</annotation>
 		<complexType>
 			<sequence>
-				<element name="documentation" type="string" minOccurs="0"/>
+				<element name="documentation" type="string" minOccurs="0" />
+				<element name="annotate" type="tns:nullability-annotations" minOccurs="0"/>
 				<choice maxOccurs="unbounded">
-					<element ref="tns:delegate"/>
-					<element ref="tns:delegate-ref"/>
+					<element ref="tns:delegate" />
+					<element ref="tns:delegate-ref" />
 				</choice>
 			</sequence>
 		</complexType>
