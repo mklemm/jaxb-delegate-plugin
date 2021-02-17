@@ -31,6 +31,9 @@ to add arbitrary methods to classes generated from an XML Schema document.
 - JAXB Version increase to 2.3.2
 - Added support for nullability annotations, see "delegate.xsd", complexType "nullability-annotations"
 
+### *2.5.1*
+- Fixed release builde error
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
