@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>net.codesup.util</groupId>
 		<artifactId>jaxb-delegate-plugin-all</artifactId>
-		<version>2.5.0</version>
+		<version>2.5.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>jaxb-delegate-plugin-test</artifactId>
@@ -21,8 +21,7 @@
 		<connection>scm:git:https://github.com/mklemm/jaxb-delegate-plugin-test.git</connection>
 		<developerConnection>scm:git:https://github.com/mklemm/jaxb-delegate-plugin-test.git</developerConnection>
 		<url>https://github.com/mklemm/jaxb-delegate-plugin-test.git</url>
-	  <tag>jaxb-delegate-plugin-all-2.5.0</tag>
-  </scm>
+	</scm>
 
 	<build>
 		<plugins>
