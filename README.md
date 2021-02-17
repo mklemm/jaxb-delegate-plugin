@@ -24,6 +24,13 @@ to add arbitrary methods to classes generated from an XML Schema document.
 ### *2.3.0*
 - Modified syntax for class references and added possible references to XSD
 
+### *2.5.0*
+- Dropped support for Java versions earlier than 9
+- Added support for Java 13
+- Binaries are built with Java 13 by default now
+- JAXB Version increase to 2.3.2
+- Added support for nullability annotations, see "delegate.xsd", complexType "nullability-annotations"
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
@@ -47,18 +54,6 @@ name specifications being specific to the programming language used.
 This way, also clients using different programming
 frameworks can consume the XSDs without any issues and base their own logic
 on the additional annotations in the XSD.
-
-## Features
-- Generates methods that delegate to a member instance of the generated class or to static methods
-- One generated class can use multiple delegates
-- Delegate definitions given as binding extensions in the XSD or a binding file can be re-used by 
-  referencing them elsewhere in the schema model.
-- The delegation model can be applied not only to classes generated from complexType definitions,
-  but they can also be applied to inner classes of the generated class, by use of the "target" attribute.
-  This will also work for inner classes generatd by different XJC plugins, like the jaxb2-rich-contract-plugin.
-  So, even nested fluent builder classes can be enhanced with business methods.
-- Types of methods, method parameters, type arguments etc. can be given using a variable expansion syntax,
-  thus further enhancing reusability of definitions. I.e. {delegeeClass} references the generated class that contains the delegate, {delegeeClass.typeParams} references its type parameters.
 
 ## Function
 The "delegate" plugin generates methods that automatically delegate to
@@ -160,7 +155,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>2.2.0</version>
+                                <version>2.5.0</version>
                             </plugin>
                         </plugins>
                     </configuration>

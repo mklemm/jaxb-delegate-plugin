@@ -24,6 +24,13 @@ to add arbitrary methods to classes generated from an XML Schema document.
 ### *2.3.0*
 - Modified syntax for class references and added possible references to XSD
 
+### *2.5.0*
+- Dropped support for Java versions earlier than 9
+- Added support for Java 13
+- Binaries are built with Java 13 by default now
+- JAXB Version increase to 2.3.2
+- Added support for nullability annotations, see "delegate.xsd", complexType "nullability-annotations"
+
 
 ## Motivation
 Usually, classes generated with XJC are more or less pure data structures. Any business logic,
@@ -148,7 +155,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>2.2.0</version>
+                                <version>2.5.0</version>
                             </plugin>
                         </plugins>
                     </configuration>

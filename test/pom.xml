@@ -7,11 +7,10 @@
 	<parent>
 		<groupId>net.codesup.util</groupId>
 		<artifactId>jaxb-delegate-plugin-all</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>2.5.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>jaxb-delegate-plugin-test</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
 
 	<name>JAXB Delegate Expression Plugin Test</name>
 	<description>JAXB delegate plugin Test suite</description>
@@ -26,21 +25,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.5.1</version>
-				<inherited>true</inherited>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-release-plugin</artifactId>
-				<configuration>
-					<tagBase>https://github.com/mklemm/jaxb-delegate-plugin.git</tagBase>
-				</configuration>
-			</plugin>
 				<plugin>
 					<groupId>org.jvnet.jaxb2.maven2</groupId>
 					<artifactId>maven-jaxb2-plugin</artifactId>
@@ -62,7 +46,7 @@
 						<verbose>true</verbose>
 						<extension>true</extension>
 						<removeOldOutput>true</removeOldOutput>
-						<specVersion>2.2</specVersion>
+						<specVersion>2.3</specVersion>
 						<args>
 							<arg>-Xfluent-builder</arg>
 							<arg>-Xdelegate</arg>
@@ -71,32 +55,15 @@
 							<plugin>
 								<groupId>net.codesup.util</groupId>
 								<artifactId>jaxb2-rich-contract-plugin</artifactId>
-								<version>2.1.0-SNAPSHOT</version>
+								<version>2.1.0</version>
 							</plugin>
 							<plugin>
 								<groupId>net.codesup.util</groupId>
 								<artifactId>jaxb-delegate-plugin</artifactId>
-								<version>2.4.0-SNAPSHOT</version>
+								<version>${project.version}</version>
 							</plugin>
 						</plugins>
 					</configuration>
-					<dependencies>
-						<dependency>
-							<groupId>org.glassfish.jaxb</groupId>
-							<artifactId>jaxb-runtime</artifactId>
-							<version>2.2.11</version>
-						</dependency>
-						<dependency>
-							<groupId>org.glassfish.jaxb</groupId>
-							<artifactId>jaxb-core</artifactId>
-							<version>2.2.11</version>
-						</dependency>
-						<dependency>
-							<groupId>org.glassfish.jaxb</groupId>
-							<artifactId>jaxb-xjc</artifactId>
-							<version>2.2.11</version>
-						</dependency>
-					</dependencies>
 			</plugin>
 		</plugins>
 	</build>
