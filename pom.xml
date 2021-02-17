@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>net.codesup.util</groupId>
 		<artifactId>jaxb-plugin-parent</artifactId>
-		<version>1.6.0-SNAPSHOT</version>
+		<version>1.6.0</version>
 	</parent>
 
 	<artifactId>jaxb-delegate-plugin-all</artifactId>

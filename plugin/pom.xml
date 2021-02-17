@@ -35,7 +35,7 @@
 		<dependency>
 			<groupId>net.codesup.util</groupId>
 			<artifactId>jaxb-plugin-lib</artifactId>
-			<version>1.7.0-SNAPSHOT</version>
+			<version>1.7.0</version>
 		</dependency>
 	</dependencies>
 
