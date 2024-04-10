@@ -32,12 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.Locator;
@@ -52,6 +48,7 @@ import com.sun.codemodel.JDeclaration;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JFieldVar;
+import com.sun.codemodel.JGenericInvocation;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
@@ -62,6 +59,11 @@ import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.model.CPluginCustomization;
 import com.sun.tools.xjc.outline.ClassOutline;
 import com.sun.tools.xjc.outline.Outline;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 
 import static java.lang.Thread.currentThread;
 
@@ -237,15 +239,16 @@ public class DelegatePlugin extends AbstractPlugin {
 		final Delegate delegate = gatherRuntimeInformation(delegateAnnotation, delegateClass);
 		final boolean staticDelegate = coalesce(delegate.isStatic(), Boolean.FALSE);
 		final boolean lazyDelegate = coalesce(delegate.isLazy(), Boolean.FALSE);
-		for (final JAXBElement<TypeParameterType> typeParamElement : delegate.getTypeParamOrTypeArg()) {
+		final var delegateTypeParams = delegate.getTypeParamOrTypeArg().stream().map(typeParamElement -> {
 			final TypeParameterType typeParameterType = typeParamElement.getValue();
 			final JClass extendsType = typeParameterType.getExtends() == null ? null : (JClass)typeParser.parse(typeParameterType.getExtends());
 			if (typeParamElement.getName().getLocalPart().equals(DelegatePlugin.TYPE_PARAM_CUSTOMIZATION_NAME)) {
 				definedClass.generify(typeParameterType.getName(), extendsType);
 			}
-			delegateClass = delegateClass.narrow((JClass)typeParser.parse(typeParameterType.getName()));
 			envTypes.put(TypeRef.DELEGATE_CLASS, definedClass);
-		}
+			return (JClass)typeParser.parse(typeParameterType.getName());
+		}).collect(Collectors.toList());
+		delegateClass = delegateClass.narrow(delegateTypeParams);
 		final String delegateFieldName = String.format(DelegatePlugin.DEFAULT_DELEGATE_FIELD_PATTERN, delegateClass.erasure().name());
 		final JFieldVar delegateField = staticDelegate || !lazyDelegate ? null : definedClass.field(JMod.PRIVATE | JMod.TRANSIENT, delegateClass, delegateFieldName, JExpr._null());
 		if (delegate.getDocumentation() != null) {
@@ -303,14 +306,14 @@ public class DelegatePlugin extends AbstractPlugin {
 					invoke = delegateClass.staticInvoke(method.getName());
 				} else {
 					final JConditional ifStatement = implMethod.body()._if(delegateField.eq(JExpr._null()));
-					ifStatement._then().assign(delegateField, JExpr._new(delegateClass).arg(JExpr._this()));
+					ifStatement._then().assign(delegateField, parameterizedNew(delegateClass).arg(JExpr._this()));
 					invoke = delegateField.invoke(method.getName());
 				}
 			} else {
 				if (staticMethod) {
 					invoke = delegateClass.staticInvoke(method.getName());
 				} else {
-					invoke = JExpr._new(delegateClass).arg(JExpr._this()).invoke(method.getName());
+					invoke = parameterizedNew(delegateClass).arg(JExpr._this()).invoke(method.getName());
 				}
 			}
 			for (final JVar param : params) {
@@ -325,6 +328,10 @@ public class DelegatePlugin extends AbstractPlugin {
 				implMethod.body()._return(invoke);
 			}
 		}
+	}
+
+	private JGenericInvocation parameterizedNew(JClass jClass) {
+		return new JGenericInvocation(jClass);
 	}
 
 	private Delegate gatherRuntimeInformation(final Delegate delegateAnnotation, final JClass delegateClass) {

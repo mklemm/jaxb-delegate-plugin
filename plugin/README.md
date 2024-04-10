@@ -178,8 +178,8 @@ anonymous complexType declaration.
 
 		<schema xmlns="http://www.w3.org/2001/XMLSchema" version="1.0"
 			targetNamespace="http://my.namespace.org/myschema"
-			xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
-			jxb:version="2.1"
+			xmlns:jxb="https://jakarta.ee/xml/ns/jaxb"
+			jxb:version="3.0"
 			jxb:extensionBindingPrefixes="delegate"
 			xmlns:delegate="http://www.codesup.net/jaxb/plugins/delegate">
 

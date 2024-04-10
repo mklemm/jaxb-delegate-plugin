@@ -124,9 +124,9 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
 			<plugins>
 				<!-- ... other plugins -->
 				<plugin>
-                	<groupId>org.jvnet.jaxb2.maven2</groupId>
-                    <artifactId>maven-jaxb2-plugin</artifactId>
-                    <version>0.11.0</version>
+                	<groupId>org.jvnet.jaxb</groupId>
+                    <artifactId>jaxb-maven-plugin</artifactId>
+                    <version>4.0.0</version>
                     <executions>
                         <execution>
                             <id>xsd-generate-2.2</id>
@@ -158,7 +158,7 @@ Enable the jaxb2-maven-plugin to generate java code from XSD:
                                 <!-- format plugin reference -->
                                 <groupId>net.codesup.util</groupId>
                                 <artifactId>jaxb-delegate-plugin</artifactId>
-                                <version>2.5.0</version>
+                                <version>4.0.0</version>
                             </plugin>
                         </plugins>
                     </configuration>
@@ -178,8 +178,8 @@ anonymous complexType declaration.
 
 		<schema xmlns="http://www.w3.org/2001/XMLSchema" version="1.0"
 			targetNamespace="http://my.namespace.org/myschema"
-			xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
-			jxb:version="2.1"
+			xmlns:jxb="https://jakarta.ee/xml/ns/jaxb"
+			jxb:version="3.0"
 			jxb:extensionBindingPrefixes="delegate"
 			xmlns:delegate="http://www.codesup.net/jaxb/plugins/delegate">
 

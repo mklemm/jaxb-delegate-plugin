@@ -3,8 +3,8 @@
 
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
 		xmlns:tns="http://www.codesup.net/jaxb/plugins/delegate/test"
-		xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
-		jxb:version="2.1"
+		xmlns:jxb="https://jakarta.ee/xml/ns/jaxb"
+		jxb:version="3.0"
 		jxb:extensionBindingPrefixes="dg"
 		xmlns:dg="http://www.codesup.net/jaxb/plugins/delegate"
 		targetNamespace="http://www.codesup.net/jaxb/plugins/delegate/test"
