@@ -32,7 +32,12 @@ to add arbitrary methods to classes generated from an XML Schema document.
 - Added support for nullability annotations, see "delegate.xsd", complexType "nullability-annotations"
 
 ### *2.5.1*
-- Fixed release builde error
+- Fixed release build error
+
+### *4.0.0*
+- Requires and supports JAXB 4.0
+and later
+- Requires Java 13 and later
 
 
 ## Motivation
